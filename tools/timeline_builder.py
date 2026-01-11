@@ -712,15 +712,16 @@ def build_timeline(inputs: EventInputs) -> Tuple[List[TimelineBlock], List[str]]
 
     # Sunset marker (shows in timeline)
     if inputs.sunset_time is not None:
+        golden_start = add_minutes(inputs.sunset_time, -30)
         _add_block(
             blocks,
-            "Sunset",
-            inputs.sunset_time,
-            0,
+            "Golden hour portraits (suggested)",
+            golden_start,
+            int(inputs.golden_hour_window_minutes),
             inputs.reception_location or inputs.ceremony_location,
-            notes="Approximate sunset time.",
+            notes=f"Sunset ~ {safe_fmt_time(inputs.sunset_time)}.",
             audience="Vendor",
-            kind="event",
+            kind="photo",
         )
 
     # Coverage constraint check
