@@ -322,6 +322,14 @@ It’s mainly a planning reference — not required for the calculation.
     col1, col2 = st.columns([1, 1])
 
     with col1:
+        st.markdown("### Date & Settings")
+        wedding_date = st.text_input("Date (YYYY-MM-DD)", value=date.today().isoformat())
+        timezone_override = st.text_input(
+            "Timezone (optional)",
+            value=tz_hint or "",
+            placeholder="e.g., America/New_York (leave blank to auto-detect)",
+        )
+
         st.markdown("### Location")
         mode = st.radio(
             "How do you want to set the location?",
@@ -370,14 +378,6 @@ It’s mainly a planning reference — not required for the calculation.
             elevation_m = st.number_input("Altitude (meters) (optional)", value=0.0, step=10.0)
             location_label = f"{lat:.5f}, {lon:.5f}"
             tz_hint = None
-
-        st.markdown("### Date + Settings")
-        wedding_date = st.text_input("Date (YYYY-MM-DD)", value=date.today().isoformat())
-        timezone_override = st.text_input(
-            "Timezone (optional)",
-            value=tz_hint or "",
-            placeholder="e.g., America/New_York (leave blank to auto-detect)",
-        )
 
         st.markdown("### Golden hour settings")
         golden_minutes_am = st.slider("Morning golden hour length (minutes)", min_value=20, max_value=90, value=60, step=5)
