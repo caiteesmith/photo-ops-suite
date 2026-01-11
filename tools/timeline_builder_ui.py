@@ -123,19 +123,20 @@ def render_timeline_builder():
         photographer_arrival_time = parse_optional_time(wedding_date, photographer_arrival_str)
 
         st.markdown("### Locations")
+        st.caption("Define your location or use the default values.")
         getting_ready_location = st.text_input("Getting ready location", value="Getting ready location")
         ceremony_location = st.text_input("Ceremony location", value="Ceremony location")
         reception_location = st.text_input("Reception location", value="Reception location")
 
         st.markdown("### Travel")
         travel_gr_to_ceremony = st.number_input(
-            "Getting ready → ceremony (min)",
+            "Getting ready → ceremony",
             min_value=0,
             max_value=240,
             value=int(defaults.get("travel_gr_to_ceremony_minutes", 15)),
         )
         travel_ceremony_to_reception = st.number_input(
-            "Ceremony → reception (min)",
+            "Ceremony → reception",
             min_value=0,
             max_value=240,
             value=int(defaults.get("travel_ceremony_to_reception_minutes", 15)),
@@ -165,7 +166,7 @@ def render_timeline_builder():
             "Buffer between blocks (min)",
             min_value=0,
             max_value=30,
-            value=int(defaults.get("buffer_minutes", 15)),
+            value=int(defaults.get("buffer_minutes", 0)),
         )
         flatlay_details_minutes = st.number_input(
             "Flat lay + details (min)",
