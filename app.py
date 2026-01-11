@@ -28,9 +28,8 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-st.image("assets/csp-logo-lilac.png", width=170)
-
 def main():
+    st.image("assets/csp-logo-lilac.png", width=150)
     st.sidebar.header("📸 Photo Ops Suite")
     tool = st.sidebar.radio(
         "Choose a tool",
