@@ -28,7 +28,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-st.image("assets/logo.png", width=170)
+st.image("assets/csp-logo-lilac.png", width=170)
 
 def main():
     st.sidebar.header("📸 Photo Ops Suite")
