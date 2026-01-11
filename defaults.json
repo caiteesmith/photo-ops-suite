@@ -1,7 +1,7 @@
 {
   "coverage_hours": 8,
 
-  "buffer_minutes": 15,
+  "buffer_minutes": 0,
   "flatlay_details_minutes": 30,
   "getting_dressed_minutes": 30,
   "individual_portraits_minutes": 30,
