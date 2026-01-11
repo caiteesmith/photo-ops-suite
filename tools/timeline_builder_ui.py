@@ -39,10 +39,10 @@ def render_timeline_builder():
     st.subheader("📸 Wedding Day Timeline Builder")
     st.markdown(
         """
-        This timeline builder is designed for wedding photographers who want a **clear, realistic flow**
+        This timeline builder is designed for wedding photographers who want a clear, realistic flow
         to the wedding day, without stressing, over-stuffing, or guesswork.
 
-        Build a timeline that respects **coverage limits**, **portrait priorities**, and **real-world logistics**,
+        Build a timeline that respects coverage limits, portrait priorities, and real-world logistics,
         then quickly spot where time is tight and where adjustments will make the biggest impact.
         """
     )
@@ -81,7 +81,7 @@ def render_timeline_builder():
     colA, colB = st.columns([1, 1])
 
     with colA:
-        st.markdown("### Inputs")
+        st.markdown("### Coverage Details")
 
         wedding_date = st.text_input("Wedding date (YYYY-MM-DD)", value="2026-06-20")
 
@@ -397,20 +397,19 @@ def render_timeline_builder():
             top_blocks = coverage_allocation_top_blocks(blocks, coverage_start, coverage_end, top_n=8)
 
             with st.expander("⏱️ Coverage allocation", expanded=True):
-                st.caption("**(What to shorten to stay within coverage)**")
                 m1, m2, m3 = st.columns(3)
                 m1.metric("Minutes in coverage", totals["in_coverage_minutes"])
                 m2.metric("Total scheduled minutes", totals["scheduled_minutes_total"])
                 m3.metric("Minutes past coverage", totals["overage_minutes"])
+
+                st.markdown("### Timeline")
+                st.dataframe(df, use_container_width=True, hide_index=True)
 
                 st.markdown("**Minutes used by category**")
                 if len(alloc_kind) == 0:
                     st.caption("No in-coverage minutes to summarize yet.")
                 else:
                     st.dataframe(alloc_kind, use_container_width=True, hide_index=True)
-
-                st.markdown("### Timeline")
-                st.dataframe(df, use_container_width=True, hide_index=True)
 
                 st.markdown("**Biggest time sinks**")
                 if len(top_blocks) == 0:

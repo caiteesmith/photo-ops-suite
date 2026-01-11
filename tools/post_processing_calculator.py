@@ -3,12 +3,12 @@ import streamlit as st
 from math import ceil
 
 def render_post_processing_calculator():
-    st.subheader("🧠 Post-Processing Calculator")
+    st.subheader("Post-Processing Calculator")
 
     st.markdown(
         """
-        Estimate your total post-wedding workload based on **photos captured**, **photos delivered**, and your average pace.
-        This includes **culling**, **editing**, and a little overhead for **ingest/export/upload**.
+        Estimate your total post-wedding workload based on photos captured, photos delivered, and your average pace.
+        This includes culling, editing, and a little overhead for ingest/export/upload.
         """
     )
 
@@ -34,8 +34,8 @@ def render_post_processing_calculator():
 
     st.divider()
     st.markdown("### Overhead")
-    ingest_backup_min = st.slider("Ingest + backup (minutes)", 0, 180, 35, 5)
-    export_upload_min = st.slider("Export + upload (minutes)", 0, 240, 45, 5)
+    ingest_backup_min = st.slider("Ingest & backup (minutes)", 0, 180, 35, 5)
+    export_upload_min = st.slider("Export & upload (minutes)", 0, 240, 45, 5)
 
     cull_hours = (captured / cull_rate) if cull_rate else 0.0
     edit_hours = (delivered * edit_seconds) / 3600.0
