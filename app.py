@@ -379,10 +379,10 @@ def render_timeline_builder():
                 else:
                     st.dataframe(alloc_kind, use_container_width=True, hide_index=True)
 
-                st.markdown("### Final timeline")
+                st.markdown("### Timeline")
                 st.dataframe(df, use_container_width=True, hide_index=True)
 
-                st.markdown("**Biggest time sinks (in coverage)**")
+                st.markdown("**Biggest time sinks**")
                 if len(top_blocks) == 0:
                     st.caption("No blocks overlap with the coverage window yet.")
                 else:

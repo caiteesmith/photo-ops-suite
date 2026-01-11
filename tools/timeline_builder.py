@@ -268,15 +268,17 @@ def build_timeline(inputs: EventInputs) -> Tuple[List[TimelineBlock], List[str]]
             inputs.photographer_arrival_time,
             0,
             inputs.getting_ready_location,
-            notes="Arrival on-site (park, unload, greet planner, quick walk-through).",
+            notes="Arrival on-site (Park, unload, setup gear).",
             audience="Vendor",
             kind="event",
         )
 
+        arrival_end = inputs.photographer_arrival_time
+
         if inputs.arrival_setup_minutes and inputs.arrival_setup_minutes > 0:
-            _add_block(
+            arrival_end = _add_block(
                 blocks,
-                "Arrival / gear setup",
+                "Arrival/Gear setup",
                 inputs.photographer_arrival_time,
                 int(inputs.arrival_setup_minutes),
                 inputs.getting_ready_location,
@@ -284,6 +286,9 @@ def build_timeline(inputs: EventInputs) -> Tuple[List[TimelineBlock], List[str]]
                 audience="Vendor",
                 kind="photo",
             )
+
+        if arrival_end > t:
+            t = arrival_end
 
     t = _add_block(
         blocks,
