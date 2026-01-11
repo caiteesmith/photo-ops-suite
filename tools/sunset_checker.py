@@ -175,6 +175,8 @@ def render_sunset_checker() -> None:
         st.error(f"Couldn't calculate sunset windows: {e}")
         return
 
+    st.divider()
+
     a, b = st.columns(2)
     with a:
         st.markdown("### ✨ Golden Hour")
