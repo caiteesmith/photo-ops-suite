@@ -34,7 +34,7 @@ def main():
         st.markdown(
             """
             <style>
-            .brand-link { color:#111827 !important; text-decoration:none !important; font-weight:600; }
+            .brand-link { color:#C9D7E3 !important; text-decoration:none !important; font-weight:600; }
             .brand-link:hover { text-decoration: underline !important; }
             </style>
 
