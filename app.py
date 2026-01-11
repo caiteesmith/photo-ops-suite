@@ -30,7 +30,7 @@ st.markdown(
 
 def main():
     with st.sidebar:
-        st.image("assets/csp-logo-slate.png", width=125)
+        st.image("assets/logo.png", width=125)
         st.markdown(
             """
             <style>
