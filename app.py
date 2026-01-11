@@ -4,6 +4,24 @@ from pathlib import Path
 
 import streamlit as st
 
+st.set_page_config(page_title="Photo Ops Suite", layout="wide")
+st.markdown(
+    """
+    <style>
+        div[data-testid="stExpander"] {
+            border-radius: 16px;
+            border: 1px solid #E6E9ED;
+            background-color: #F1F3F5;
+        }
+
+        button[kind="primary"] {
+            border-radius: 999px;
+        }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 from core.models import EventInputs, FamilyDynamics, ReceptionEvents
 from core.timeutils import parse_hhmm, add_hours
 from tools.timeline_builder import (
