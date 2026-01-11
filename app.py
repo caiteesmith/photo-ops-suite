@@ -5,7 +5,12 @@ from tools.post_processing_calculator import render_post_processing_calculator
 
 import streamlit as st
 
-st.set_page_config(page_title="Photo Ops Suite", layout="wide")
+st.set_page_config(
+    page_title="Photo Ops Suite | Caitee Smith Photography",
+    page_icon="assets/favicon.png",
+    layout="wide",
+)
+
 st.markdown(
     """
     <style>
@@ -22,6 +27,8 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
+
+st.image("assets/logo.png", width=170)
 
 def main():
     st.sidebar.header("📸 Photo Ops Suite")
