@@ -137,13 +137,13 @@ def coverage_allocation_by_kind(blocks: List[TimelineBlock], coverage_start: dat
         mins = _overlap_minutes(b.start, b.end, coverage_start, coverage_end)
         if mins <= 0:
             continue
-        rows.append({"Kind": b.kind, "MinutesInCoverage": mins})
+        rows.append({"Kind": b.kind, "Minutes In Coverage": mins})
 
     if not rows:
-        return pd.DataFrame(columns=["Kind", "MinutesInCoverage"])
+        return pd.DataFrame(columns=["Kind", "Minutes In Coverage"])
 
     df = pd.DataFrame(rows)
-    out = df.groupby("Kind", as_index=False)["MinutesInCoverage"].sum().sort_values("MinutesInCoverage", ascending=False)
+    out = df.groupby("Kind", as_index=False)["Minutes In Coverage"].sum().sort_values("Minutes In Coverage", ascending=False)
     return out
 
 
@@ -162,17 +162,17 @@ def coverage_allocation_top_blocks(blocks: List[TimelineBlock], coverage_start: 
             {
                 "Block": b.name,
                 "Kind": b.kind,
-                "MinutesInCoverage": mins,
+                "Minutes In Coverage": mins,
                 "Window": f"{safe_fmt_time(b.start)}–{safe_fmt_time(b.end)}",
                 "Location": b.location,
             }
         )
 
     if not rows:
-        return pd.DataFrame(columns=["Block", "Kind", "MinutesInCoverage", "Window", "Location"])
+        return pd.DataFrame(columns=["Block", "Kind", "Minutes In Coverage", "Window", "Location"])
 
     df = pd.DataFrame(rows)
-    df = df.sort_values("MinutesInCoverage", ascending=False).head(top_n)
+    df = df.sort_values("Minutes In Coverage", ascending=False).head(top_n)
     return df
 
 
@@ -218,7 +218,7 @@ def build_timeline(inputs: EventInputs) -> Tuple[List[TimelineBlock], List[str]]
         t,
         inputs.flatlay_details_minutes,
         inputs.getting_ready_location,
-        notes="Invite suite, rings, vow books, perfume, jewelry, etc.",
+        notes="Invitation suite, rings, vow books, perfume, jewelry, etc.",
         audience="Vendor",
         kind="photo",
     )

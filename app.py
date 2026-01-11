@@ -148,7 +148,7 @@ def render_timeline_builder():
             value=int(defaults.get("individual_portraits_minutes", 30)),
         )
         tuckaway_minutes = st.number_input(
-            "Tuckaway before ceremony (guest arrivals + ceremony details) (min)",
+            "Tuckaway before ceremony (min)",
             min_value=0,
             max_value=60,
             value=int(defaults.get("tuckaway_minutes", 30)),
@@ -355,11 +355,14 @@ def render_timeline_builder():
                 m2.metric("Total scheduled minutes", totals["scheduled_minutes_total"])
                 m3.metric("Minutes past coverage", totals["overage_minutes"])
 
-                st.markdown("**Minutes used (in coverage) by category**")
+                st.markdown("**Minutes used  by category**")
                 if len(alloc_kind) == 0:
                     st.caption("No in-coverage minutes to summarize yet.")
                 else:
                     st.dataframe(alloc_kind, use_container_width=True, hide_index=True)
+
+                st.markdown("### Final timeline")
+                st.dataframe(df, use_container_width=True, hide_index=True)
 
                 st.markdown("**Biggest time sinks (in coverage)**")
                 if len(top_blocks) == 0:
@@ -368,8 +371,8 @@ def render_timeline_builder():
                     st.dataframe(top_blocks, use_container_width=True, hide_index=True)
 
                 st.caption(
-                    "Tip: if you’re over coverage, the fastest wins are usually reducing "
-                    "Couple Portraits / Wedding Party / Family Portraits, or tightening buffers/travel assumptions."
+                    "Tip: if you're over coverage, the fastest wins are usually reducing "
+                    "time for portraits or tightening buffers/travel assumptions."
                 )
 
             if warnings:
@@ -386,7 +389,7 @@ def render_timeline_builder():
             st.text_area("Timeline text", value=blocks_to_text(blocks), height=320)
 
         except Exception as e:
-            st.error(f"Couldn’t generate timeline yet: {e}")
+            st.error(f"Couldn't generate timeline yet: {e}")
             st.info("Tip: Use times like '4:00 PM' and date like '2026-06-20'.")
 
 
