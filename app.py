@@ -38,12 +38,12 @@ def main():
             index=0,
         )
 
-        if tool == "Timeline Builder":
-            render_timeline_builder()
-        elif tool == "Sunset & Golden Hour":
-            render_sunset_checker()
-        elif tool == "Post-Processing Calculator":
-            render_post_processing_calculator()
+    if tool == "Timeline Builder":
+        render_timeline_builder()
+    elif tool == "Sunset & Golden Hour":
+        render_sunset_checker()
+    elif tool == "Post-Processing Calculator":
+        render_post_processing_calculator()
 
 if __name__ == "__main__":
     main()
