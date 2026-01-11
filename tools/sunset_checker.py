@@ -1,196 +1,474 @@
+# =========================
+# file: tools/sunset_checker.py
+# =========================
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date as dt_date, datetime
-from zoneinfo import ZoneInfo
+from datetime import datetime, date, timedelta
+from typing import Any, Dict, List, Optional, Tuple
 
+import requests
 import streamlit as st
-from astral import LocationInfo
-from astral.sun import sun
-from astral import sun as astral_sun
-from timezonefinder import TimezoneFinder
-from geopy.geocoders import Nominatim
-from geopy.extra.rate_limiter import RateLimiter
-
-_tf = TimezoneFinder()
-
-_geolocator = Nominatim(user_agent="photo-ops-suite/1.0 (sunset-checker)")
-_geocode = RateLimiter(_geolocator.geocode, min_delay_seconds=1.0)
-
-def _tz_from_latlon(lat: float, lon: float) -> str:
-    tz = _tf.timezone_at(lat=lat, lng=lon)
-    return tz or "UTC"
-
-@st.cache_data(show_spinner=False)
-def geocode_address(query: str) -> tuple[float, float, str]:
-    """
-    Returns (lat, lon, display_name).
-    Cached to avoid repeated calls.
-    """
-    q = (query or "").strip()
-    if not q:
-        raise ValueError("Please enter a location.")
-
-    loc = _geocode(q)
-    if loc is None:
-        raise ValueError("Couldn't find that location. Try adding city/state or a full address.")
-
-    return float(loc.latitude), float(loc.longitude), str(loc.address)
 
 
-def _time_at_altitude(loc: LocationInfo, target_altitude_deg: float, day: dt_date, is_rising: bool) -> datetime:
-    observer = loc.observer
-    tzinfo = ZoneInfo(loc.timezone)
+# -------------------------
+# Helpers
+# -------------------------
+@dataclass
+class GeoCandidate:
+    label: str
+    lat: float
+    lon: float
+    elevation_m: Optional[float] = None
+    timezone: Optional[str] = None
+    source: str = "geocoding"
 
+
+def _safe_float(x: Any) -> Optional[float]:
     try:
-        return astral_sun.time_at_elevation(observer, target_altitude_deg, day, tzinfo=tzinfo, rising=is_rising)
-    except TypeError:
-        direction = astral_sun.SunDirection.RISING if is_rising else astral_sun.SunDirection.SETTING
-        return astral_sun.time_at_elevation(observer, target_altitude_deg, day, tzinfo=tzinfo, direction=direction)
+        if x is None:
+            return None
+        return float(x)
+    except Exception:
+        return None
 
 
-def _fmt(dt: datetime) -> str:
+def _parse_date_yyyy_mm_dd(raw: str) -> date:
+    return datetime.strptime(raw.strip(), "%Y-%m-%d").date()
+
+
+def _parse_12h_time(raw: str) -> Optional[datetime]:
+    """
+    Parses times like: '7:06:58 AM' from SunriseSunset.io
+    Returns a datetime with today's date (caller will replace date anyway).
+    """
+    raw = (raw or "").strip()
+    if not raw:
+        return None
+    for fmt in ("%I:%M:%S %p", "%I:%M %p"):
+        try:
+            return datetime.strptime(raw, fmt)
+        except ValueError:
+            pass
+    return None
+
+
+def _fmt_time(dt: Optional[datetime]) -> str:
+    if not dt:
+        return "—"
+    # Cross-platform: avoid %-I on Windows by doing manual strip
     return dt.strftime("%I:%M %p").lstrip("0")
 
 
-@dataclass(frozen=True)
-class SunsetResults:
-    timezone: str
-    sunrise: datetime
-    solar_noon: datetime
-    sunset: datetime
-    golden_start: datetime
-    golden_end: datetime
-    blue_start: datetime
-    blue_end: datetime
+def _add_minutes(dt: datetime, minutes: int) -> datetime:
+    return dt + timedelta(minutes=int(minutes))
 
 
-def calculate_sunset_windows(
-    day: dt_date,
-    lat: float,
-    lon: float,
-    golden_low_deg: float = -4.0,
-    golden_high_deg: float = 6.0,
-    blue_low_deg: float = -6.0,
-    blue_high_deg: float = -4.0,
-) -> SunsetResults:
-    tz_name = _tz_from_latlon(lat, lon)
-    loc = LocationInfo(name="Wedding Location", region="Custom", timezone=tz_name, latitude=lat, longitude=lon)
-
-    s = sun(loc.observer, date=day, tzinfo=ZoneInfo(tz_name))
-    sunrise = s["sunrise"]
-    solar_noon = s["noon"]
-    sunset = s["sunset"]
-
-    golden_start = _time_at_altitude(loc, golden_high_deg, day, is_rising=False)
-    golden_end = _time_at_altitude(loc, golden_low_deg, day, is_rising=False)
-    blue_start = _time_at_altitude(loc, blue_high_deg, day, is_rising=False)
-    blue_end = _time_at_altitude(loc, blue_low_deg, day, is_rising=False)
-
-    return SunsetResults(
-        timezone=tz_name,
-        sunrise=sunrise,
-        solar_noon=solar_noon,
-        sunset=sunset,
-        golden_start=golden_start,
-        golden_end=golden_end,
-        blue_start=blue_start,
-        blue_end=blue_end,
+def _build_dt(on_date: date, t: datetime) -> datetime:
+    """
+    SunriseSunset.io returns times only; we attach the selected date.
+    """
+    return datetime(
+        year=on_date.year,
+        month=on_date.month,
+        day=on_date.day,
+        hour=t.hour,
+        minute=t.minute,
+        second=t.second,
     )
 
-def render_sunset_checker() -> None:
-    st.subheader("🌅 Sunset & Golden Hour Checker")
+
+# -------------------------
+# Geocoding (Address -> Lat/Lon)
+# -------------------------
+def _geocode_open_meteo(query: str, limit: int = 8) -> List[GeoCandidate]:
+    """
+    Open-Meteo geocoding is fast and gives timezone + elevation for many results.
+    Great for city / venue names, sometimes weaker on full street addresses.
+    """
+    url = "https://geocoding-api.open-meteo.com/v1/search"
+    params = {
+        "name": query,
+        "count": limit,
+        "language": "en",
+        "format": "json",
+    }
+
+    try:
+        r = requests.get(url, params=params, timeout=12)
+        r.raise_for_status()
+        data = r.json()
+    except Exception:
+        return []
+
+    results = data.get("results") or []
+    candidates: List[GeoCandidate] = []
+
+    for item in results:
+        lat = _safe_float(item.get("latitude"))
+        lon = _safe_float(item.get("longitude"))
+        if lat is None or lon is None:
+            continue
+
+        name = (item.get("name") or "").strip()
+        admin1 = (item.get("admin1") or "").strip()
+        admin2 = (item.get("admin2") or "").strip()
+        country = (item.get("country") or "").strip()
+        tz = (item.get("timezone") or "").strip() or None
+        elev = _safe_float(item.get("elevation"))
+
+        parts = [p for p in [name, admin2, admin1, country] if p]
+        label = " • ".join(parts) if parts else f"{lat:.5f}, {lon:.5f}"
+
+        candidates.append(
+            GeoCandidate(
+                label=label,
+                lat=float(lat),
+                lon=float(lon),
+                elevation_m=elev,
+                timezone=tz,
+                source="open-meteo",
+            )
+        )
+
+    return candidates
+
+
+def _geocode_nominatim(query: str, limit: int = 8) -> List[GeoCandidate]:
+    """
+    Fallback: Nominatim (OpenStreetMap) tends to be better for full street addresses.
+    Note: doesn't reliably return elevation/timezone.
+    """
+    url = "https://nominatim.openstreetmap.org/search"
+    params = {
+        "q": query,
+        "format": "jsonv2",
+        "limit": limit,
+        "addressdetails": 1,
+    }
+    headers = {
+        # Helps avoid being blocked; still keep usage reasonable.
+        "User-Agent": "PhotoOpsSuite/1.0 (Streamlit app; contact: none)",
+    }
+
+    try:
+        r = requests.get(url, params=params, headers=headers, timeout=12)
+        r.raise_for_status()
+        data = r.json()
+    except Exception:
+        return []
+
+    candidates: List[GeoCandidate] = []
+    for item in data:
+        lat = _safe_float(item.get("lat"))
+        lon = _safe_float(item.get("lon"))
+        if lat is None or lon is None:
+            continue
+
+        label = (item.get("display_name") or "").strip()
+        if not label:
+            label = f"{lat:.5f}, {lon:.5f}"
+
+        candidates.append(
+            GeoCandidate(
+                label=label,
+                lat=float(lat),
+                lon=float(lon),
+                elevation_m=None,
+                timezone=None,
+                source="nominatim",
+            )
+        )
+
+    return candidates
+
+
+def geocode_location(query: str) -> List[GeoCandidate]:
+    """
+    Two-pass approach:
+      1) Open-Meteo (great for place names + gives timezone/elevation)
+      2) Nominatim fallback (better for full addresses)
+    """
+    query = (query or "").strip()
+    if not query:
+        return []
+
+    # Try the exact query first
+    candidates = _geocode_open_meteo(query)
+
+    # If nothing, try a slightly simplified query (sometimes street commas confuse results)
+    if not candidates and "," in query:
+        simplified = " ".join([p.strip() for p in query.split(",") if p.strip()])
+        candidates = _geocode_open_meteo(simplified)
+
+    # Fallback to Nominatim for street-level searches
+    if not candidates:
+        candidates = _geocode_nominatim(query)
+
+    return candidates
+
+
+# -------------------------
+# Sunrise/Sunset + Twilight
+# -------------------------
+def fetch_sun_times(lat: float, lon: float, on_date: date, timezone: Optional[str] = None) -> Dict[str, Any]:
+    """
+    Uses SunriseSunset.io (free) to get sunrise/sunset + dawn/dusk + golden hour.
+    """
+    url = "https://api.sunrisesunset.io/json"
+    params = {
+        "lat": lat,
+        "lng": lon,
+        "date": on_date.isoformat(),
+        # Let API infer local timezone if not provided
+    }
+    if timezone:
+        params["timezone"] = timezone
+
+    r = requests.get(url, params=params, timeout=12)
+    r.raise_for_status()
+    data = r.json()
+
+    if (data or {}).get("status") != "OK":
+        raise RuntimeError(f"SunriseSunset.io error: {data}")
+
+    return data.get("results") or {}
+
+
+def compute_windows(results: Dict[str, Any], on_date: date, golden_minutes_am: int, golden_minutes_pm: int) -> Dict[str, Any]:
+    """
+    Builds the key photo windows:
+      - Sunset time
+      - Golden hour (AM + PM)
+      - Blue hour (AM + PM)
+    Definitions used:
+      - Blue hour AM: dawn -> sunrise
+      - Blue hour PM: sunset -> dusk
+      - Golden hour PM: golden_hour -> sunset (as provided by API)
+      - Golden hour AM: sunrise -> sunrise + golden_minutes_am (configurable)
+    """
+    # Parse times from API
+    sunrise_t = _parse_12h_time(results.get("sunrise"))
+    sunset_t = _parse_12h_time(results.get("sunset"))
+    dawn_t = _parse_12h_time(results.get("dawn"))   # civil twilight begin
+    dusk_t = _parse_12h_time(results.get("dusk"))   # civil twilight end
+    golden_start_pm_t = _parse_12h_time(results.get("golden_hour"))  # API-provided
+
+    sunrise = _build_dt(on_date, sunrise_t) if sunrise_t else None
+    sunset = _build_dt(on_date, sunset_t) if sunset_t else None
+    dawn = _build_dt(on_date, dawn_t) if dawn_t else None
+    dusk = _build_dt(on_date, dusk_t) if dusk_t else None
+    golden_start_pm = _build_dt(on_date, golden_start_pm_t) if golden_start_pm_t else None
+
+    # Blue hour windows
+    blue_am = (dawn, sunrise) if dawn and sunrise else (None, None)
+    blue_pm = (sunset, dusk) if sunset and dusk else (None, None)
+
+    # Golden hour windows
+    golden_am = (sunrise, _add_minutes(sunrise, golden_minutes_am)) if sunrise else (None, None)
+    golden_pm = (golden_start_pm, sunset) if golden_start_pm and sunset else (None, None)
+
+    return {
+        "sunrise": sunrise,
+        "sunset": sunset,
+        "dawn": dawn,
+        "dusk": dusk,
+        "golden_am": golden_am,
+        "golden_pm": golden_pm,
+        "blue_am": blue_am,
+        "blue_pm": blue_pm,
+        "timezone": results.get("timezone"),
+        "utc_offset": results.get("utc_offset"),
+        "day_length": results.get("day_length"),
+        "first_light": results.get("first_light"),
+        "last_light": results.get("last_light"),
+        "solar_noon": results.get("solar_noon"),
+    }
+
+
+# -------------------------
+# UI
+# -------------------------
+def render_sunset_checker():
+    st.subheader("🌅 Sunset, Golden Hour, and Blue Hour Checker")
 
     st.markdown(
         """
-        Look up sunset, golden hour, and blue hour for a wedding location.
-        You can search by city/state or enter lat/lon directly.
-        """
+This tool helps you plan portrait timing **fast**:
+- **Sunset** (the anchor)
+- **Golden hour** (best light for portraits)
+- **Blue hour** (the dreamy post-sunset glow)
+
+It supports **searching by address/venue name** *or* entering **lat/lon** directly.
+"""
     )
 
-    day = st.date_input("Date", value=dt_date.today())
+    with st.expander("Altitude note (why it matters)", expanded=False):
+        st.markdown(
+            """
+**Altitude can shift these times slightly** because the sun becomes visible earlier (and sets later)
+when you’re higher above sea level.
 
-    mode = st.radio("Location input", ["Search by address / venue", "Enter lat/lon"], horizontal=True)
+- Most public APIs return times using standard astronomical models and local conditions (and often assume sea-level).
+- In practice, altitude usually changes sunrise/sunset by **seconds to a couple minutes**, but it can matter
+  in mountainous locations or when you’re cutting it close.
 
-    lat = lon = None
-    display_name = None
-
-    if mode == "Search by address / venue":
-        query = st.text_input(
-            "Search location",
-            placeholder="e.g., Saratoga Springs, NY",
+**What this app does:**  
+If we can detect elevation from geocoding (Open-Meteo), we’ll display it.  
+It’s mainly a planning reference — not required for the calculation.
+"""
         )
-
-        colA, colB = st.columns([1, 1])
-        with colA:
-            if st.button("Find location", type="primary", use_container_width=True):
-                try:
-                    lat, lon, display_name = geocode_address(query)
-                    st.session_state["sunset_lat"] = lat
-                    st.session_state["sunset_lon"] = lon
-                    st.session_state["sunset_display"] = display_name
-                except Exception as e:
-                    st.error(str(e))
-
-        lat = st.session_state.get("sunset_lat", lat)
-        lon = st.session_state.get("sunset_lon", lon)
-        display_name = st.session_state.get("sunset_display", display_name)
-
-        if lat is not None and lon is not None:
-            st.success(f"Using: {display_name}")
-            st.caption(f"Lat/Lon: {lat:.6f}, {lon:.6f}")
-
-    else:
-        col1, col2 = st.columns([1, 1])
-        with col1:
-            lat = st.number_input("Latitude", value=40.735657, format="%.6f")
-        with col2:
-            lon = st.number_input("Longitude", value=-74.172367, format="%.6f")
-
-    st.divider()
 
     col1, col2 = st.columns([1, 1])
+
     with col1:
-        golden_low = st.slider("Golden hour low altitude (°)", -10.0, 5.0, -4.0, 0.5)
-        golden_high = st.slider("Golden hour high altitude (°)", 0.0, 15.0, 6.0, 0.5)
-    with col2:
-        blue_low = st.slider("Blue hour low altitude (°)", -12.0, -3.0, -6.0, 0.5)
-        blue_high = st.slider("Blue hour high altitude (°)", -8.0, 0.0, -4.0, 0.5)
-
-    if lat is None or lon is None:
-        st.info("Enter a location above to calculate sunset windows.")
-        return
-
-    try:
-        results = calculate_sunset_windows(
-            day=day,
-            lat=float(lat),
-            lon=float(lon),
-            golden_low_deg=float(golden_low),
-            golden_high_deg=float(golden_high),
-            blue_low_deg=float(blue_low),
-            blue_high_deg=float(blue_high),
+        st.markdown("### Location")
+        mode = st.radio(
+            "How do you want to set the location?",
+            ["Search by address / venue", "Enter lat/lon manually"],
+            index=0,
+            horizontal=True,
         )
-    except Exception as e:
-        st.error(f"Couldn't calculate sunset windows: {e}")
-        return
 
-    st.divider()
+        location_label = None
+        lat = None
+        lon = None
+        elevation_m = None
+        tz_hint = None
 
-    a, b = st.columns(2)
-    with a:
-        st.markdown("### ✨ Golden Hour")
-        st.write(f"**Start:** {_fmt(results.golden_start)}")
-        st.write(f"**End:** {_fmt(results.golden_end)}")
-    with b:
-        st.markdown("### 🌌 Blue Hour")
-        st.write(f"**Start:** {_fmt(results.blue_start)}")
-        st.write(f"**End:** {_fmt(results.blue_end)}")
+        if mode == "Search by address / venue":
+            query = st.text_input(
+                "Search",
+                value="",
+                placeholder="Try: 'Franklin Plaza, NJ' or '123 Main St, Morristown, NJ'",
+            )
 
-    st.divider()
+            # live lookup when user types something meaningful
+            candidates: List[GeoCandidate] = []
+            if query and len(query.strip()) >= 3:
+                with st.spinner("Searching..."):
+                    candidates = geocode_location(query)
 
-    st.write(f"**Timezone:** {results.timezone}")
-    m1, m2, m3 = st.columns(3)
-    m1.metric("Sunrise", _fmt(results.sunrise))
-    m2.metric("Solar Noon", _fmt(results.solar_noon))
-    m3.metric("Sunset", _fmt(results.sunset))
+            if query and not candidates:
+                st.error("Couldn't find that location. Try adding city/state or a full address.")
+
+            if candidates:
+                choice = st.selectbox(
+                    "Choose the best match",
+                    options=list(range(len(candidates))),
+                    format_func=lambda i: f"{candidates[i].label}  ({candidates[i].source})",
+                )
+                picked = candidates[int(choice)]
+                lat, lon = picked.lat, picked.lon
+                elevation_m = picked.elevation_m
+                tz_hint = picked.timezone
+                location_label = picked.label
+
+        else:
+            lat = st.number_input("Latitude", value=40.7128, format="%.6f")
+            lon = st.number_input("Longitude", value=-74.0060, format="%.6f")
+            elevation_m = st.number_input("Altitude (meters) (optional)", value=0.0, step=10.0)
+            location_label = f"{lat:.5f}, {lon:.5f}"
+            tz_hint = None
+
+        st.markdown("### Date + Settings")
+        wedding_date = st.text_input("Date (YYYY-MM-DD)", value=date.today().isoformat())
+        timezone_override = st.text_input(
+            "Timezone (optional)",
+            value=tz_hint or "",
+            placeholder="e.g., America/New_York (leave blank to auto-detect)",
+        )
+
+        st.markdown("### Golden hour settings")
+        golden_minutes_am = st.slider("Morning golden hour length (minutes)", min_value=20, max_value=90, value=60, step=5)
+        golden_minutes_pm = st.slider("Evening golden hour length (minutes)", min_value=20, max_value=90, value=60, step=5)
+
+    with col2:
+        st.markdown("### Results")
+
+        if lat is None or lon is None:
+            st.info("Enter a location to see results.")
+            return
+
+        try:
+            on_date = _parse_date_yyyy_mm_dd(wedding_date)
+        except Exception:
+            st.error("Please use a date like 2026-06-20.")
+            return
+
+        try:
+            tz = timezone_override.strip() or None
+
+            with st.spinner("Fetching sun times..."):
+                results = fetch_sun_times(float(lat), float(lon), on_date, timezone=tz)
+
+            windows = compute_windows(results, on_date, golden_minutes_am=golden_minutes_am, golden_minutes_pm=golden_minutes_pm)
+
+            # --- PROMINENT SUMMARY (top of tool) ---
+            sunset = windows["sunset"]
+            golden_pm_start, golden_pm_end = windows["golden_pm"]
+            blue_pm_start, blue_pm_end = windows["blue_pm"]
+
+            st.markdown("## 🧭 Quick Plan (most important)")
+            a, b, c = st.columns(3)
+            a.metric("Sunset", _fmt_time(sunset))
+            b.metric(
+                "Golden hour (PM)",
+                f"{_fmt_time(golden_pm_start)}–{_fmt_time(golden_pm_end)}",
+            )
+            c.metric(
+                "Blue hour (PM)",
+                f"{_fmt_time(blue_pm_start)}–{_fmt_time(blue_pm_end)}",
+            )
+
+            st.caption(f"Location: {location_label or f'{lat:.5f}, {lon:.5f}'}")
+            tz_display = windows.get("timezone") or (timezone_override.strip() if timezone_override.strip() else None)
+            if tz_display:
+                st.caption(f"Timezone: {tz_display}")
+
+            # Show altitude prominently (if we have it)
+            if elevation_m is not None:
+                ft = float(elevation_m) * 3.28084
+                st.caption(f"Approx. altitude: {float(elevation_m):.0f} m ({ft:.0f} ft)")
+
+            st.divider()
+
+            # --- FULL DETAIL ---
+            st.markdown("### All windows")
+
+            sunrise = windows["sunrise"]
+            golden_am_start, golden_am_end = windows["golden_am"]
+            blue_am_start, blue_am_end = windows["blue_am"]
+            dawn = windows["dawn"]
+            dusk = windows["dusk"]
+
+            r1, r2 = st.columns(2)
+            with r1:
+                st.markdown("**Morning**")
+                st.write(f"- **First light:** {results.get('first_light') or '—'}")
+                st.write(f"- **Dawn (civil):** {_fmt_time(dawn)}")
+                st.write(f"- **Sunrise:** {_fmt_time(sunrise)}")
+                st.write(f"- **Golden hour (AM):** {_fmt_time(golden_am_start)}–{_fmt_time(golden_am_end)}")
+                st.write(f"- **Blue hour (AM):** {_fmt_time(blue_am_start)}–{_fmt_time(blue_am_end)}")
+
+            with r2:
+                st.markdown("**Evening**")
+                st.write(f"- **Golden hour (PM):** {_fmt_time(golden_pm_start)}–{_fmt_time(golden_pm_end)}")
+                st.write(f"- **Sunset:** {_fmt_time(sunset)}")
+                st.write(f"- **Dusk (civil):** {_fmt_time(dusk)}")
+                st.write(f"- **Blue hour (PM):** {_fmt_time(blue_pm_start)}–{_fmt_time(blue_pm_end)}")
+                st.write(f"- **Last light:** {results.get('last_light') or '—'}")
+
+            with st.expander("More details", expanded=False):
+                st.write(f"**Solar noon:** {windows.get('solar_noon') or '—'}")
+                st.write(f"**Day length:** {windows.get('day_length') or '—'}")
+                st.write(f"**UTC offset (minutes):** {windows.get('utc_offset') if windows.get('utc_offset') is not None else '—'}")
+
+            # Simple map
+            st.map([{"lat": float(lat), "lon": float(lon)}], zoom=10)
+
+        except requests.HTTPError as e:
+            st.error(f"Network/API error: {e}")
+        except Exception as e:
+            st.error(f"Couldn't calculate times: {e}")
+            st.info("Tip: Try a different search wording (venue + city/state) or enter lat/lon directly.")
