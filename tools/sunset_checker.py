@@ -411,21 +411,21 @@ def render_sunset_checker():
             elevation_m = float(st.number_input("Altitude (meters) (optional)", value=0.0, step=10.0))
             location_label = f"{lat:.5f}, {lon:.5f}"
 
-        st.markdown("### Golden hour settings")
-        golden_minutes_am = st.slider(
-            "Morning golden hour length (minutes)",
-            min_value=10,
-            max_value=120,
-            value=60,
-            step=5,
-        )
-        golden_minutes_pm = st.slider(
-            "Evening golden hour length (minutes)",
-            min_value=10,
-            max_value=120,
-            value=60,
-            step=5,
-        )
+        # st.markdown("### Golden hour settings")
+        # golden_minutes_am = st.slider(
+        #     "Morning golden hour length (minutes)",
+        #     min_value=10,
+        #     max_value=120,
+        #     value=60,
+        #     step=5,
+        # )
+        # golden_minutes_pm = st.slider(
+        #     "Evening golden hour length (minutes)",
+        #     min_value=10,
+        #     max_value=120,
+        #     value=60,
+        #     step=5,
+        # )
 
     with col2:
         st.markdown("### Results")
