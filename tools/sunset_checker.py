@@ -409,16 +409,35 @@ It’s mainly a planning reference — not required for the calculation.
             golden_pm_start, golden_pm_end = windows["golden_pm"]
             blue_pm_start, blue_pm_end = windows["blue_pm"]
 
-            st.markdown("## 🧭 Quick Plan (most important)")
-            a, b, c = st.columns(3)
-            a.metric("Sunset", _fmt_time(sunset))
-            b.metric(
-                "Golden hour (PM)",
-                f"{_fmt_time(golden_pm_start)}–{_fmt_time(golden_pm_end)}",
+            st.markdown("## 🧭 Quick Plan")
+            st.markdown(
+                f"""
+            <div style="padding: 14px 16px; border: 1px solid #E6E9ED; border-radius: 16px; background: #F8F9FA;">
+            <div style="font-size: 13px; opacity: 0.7; margin-bottom: 6px;">Sunset</div>
+            <div style="font-size: 28px; font-weight: 700;">{_fmt_time(sunset)}</div>
+            </div>
+            """,
+                unsafe_allow_html=True,
             )
-            c.metric(
-                "Blue hour (PM)",
-                f"{_fmt_time(blue_pm_start)}–{_fmt_time(blue_pm_end)}",
+
+            st.markdown(
+                f"""
+            <div style="padding: 14px 16px; border: 1px solid #E6E9ED; border-radius: 16px; background: #F8F9FA; margin-top: 10px;">
+            <div style="font-size: 13px; opacity: 0.7; margin-bottom: 6px;">Golden hour (PM)</div>
+            <div style="font-size: 24px; font-weight: 700;">{_fmt_time(golden_pm_start)}–{_fmt_time(golden_pm_end)}</div>
+            </div>
+            """,
+                unsafe_allow_html=True,
+            )
+
+            st.markdown(
+                f"""
+            <div style="padding: 14px 16px; border: 1px solid #E6E9ED; border-radius: 16px; background: #F8F9FA; margin-top: 10px;">
+            <div style="font-size: 13px; opacity: 0.7; margin-bottom: 6px;">Blue hour (PM)</div>
+            <div style="font-size: 24px; font-weight: 700;">{_fmt_time(blue_pm_start)}–{_fmt_time(blue_pm_end)}</div>
+            </div>
+            """,
+                unsafe_allow_html=True,
             )
 
             st.caption(f"Location: {location_label or f'{lat:.5f}, {lon:.5f}'}")
@@ -444,25 +463,25 @@ It’s mainly a planning reference — not required for the calculation.
 
             r1, r2 = st.columns(2)
             with r1:
-                st.markdown("**Morning**")
-                st.write(f"- **First light:** {results.get('first_light') or '—'}")
-                st.write(f"- **Dawn (civil):** {_fmt_time(dawn)}")
-                st.write(f"- **Sunrise:** {_fmt_time(sunrise)}")
-                st.write(f"- **Golden hour (AM):** {_fmt_time(golden_am_start)}–{_fmt_time(golden_am_end)}")
-                st.write(f"- **Blue hour (AM):** {_fmt_time(blue_am_start)}–{_fmt_time(blue_am_end)}")
+                st.markdown("**Evening**")
+                st.write(f"- **Golden hour:** {_fmt_time(golden_pm_start)}–{_fmt_time(golden_pm_end)}")
+                st.write(f"- **Sunset:** {_fmt_time(sunset)}")
+                st.write(f"- **Dusk:** {_fmt_time(dusk)}")
+                st.write(f"- **Blue hour:** {_fmt_time(blue_pm_start)}–{_fmt_time(blue_pm_end)}")
+                st.write(f"- **Last light:** {results.get('last_light') or '—'}")
 
             with r2:
-                st.markdown("**Evening**")
-                st.write(f"- **Golden hour (PM):** {_fmt_time(golden_pm_start)}–{_fmt_time(golden_pm_end)}")
-                st.write(f"- **Sunset:** {_fmt_time(sunset)}")
-                st.write(f"- **Dusk (civil):** {_fmt_time(dusk)}")
-                st.write(f"- **Blue hour (PM):** {_fmt_time(blue_pm_start)}–{_fmt_time(blue_pm_end)}")
-                st.write(f"- **Last light:** {results.get('last_light') or '—'}")
+                st.markdown("**Morning**")
+                st.write(f"- **First light:** {results.get('first_light') or '—'}")
+                st.write(f"- **Dawn:** {_fmt_time(dawn)}")
+                st.write(f"- **Sunrise:** {_fmt_time(sunrise)}")
+                st.write(f"- **Golden hour:** {_fmt_time(golden_am_start)}–{_fmt_time(golden_am_end)}")
+                st.write(f"- **Blue hour:** {_fmt_time(blue_am_start)}–{_fmt_time(blue_am_end)}")
 
             with st.expander("More details", expanded=False):
                 st.write(f"**Solar noon:** {windows.get('solar_noon') or '—'}")
                 st.write(f"**Day length:** {windows.get('day_length') or '—'}")
-                st.write(f"**UTC offset (minutes):** {windows.get('utc_offset') if windows.get('utc_offset') is not None else '—'}")
+                st.write(f"**UTC offset (mins):** {windows.get('utc_offset') if windows.get('utc_offset') is not None else '—'}")
 
             # Simple map
             st.map([{"lat": float(lat), "lon": float(lon)}], zoom=10)
