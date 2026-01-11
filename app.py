@@ -30,20 +30,17 @@ st.markdown(
 
 def main():
     with st.sidebar:
-        st.image("assets/csp-logo-slate.png", width=125)
-        st.markdown(
-            """
-            <style>
-            .brand-link { color:#2C2C2C !important; font-weight:400; }
-            .brand-link:hover { text-decoration: underline !important; }
-            </style>
+        with st.sidebar:
+            st.markdown(
+                """
+                <a href="https://www.caiteesmithphotography.com" target="_blank">
+                    <img src="assets/csp-logo-slate.png" style="width:150px;" />
+                </a>
+                """,
+                unsafe_allow_html=True,
+            )
 
-            <a class="brand-link" href="https://www.caiteesmithphotography.com" target="_blank">
-            caiteesmithphotography.com
-            </a>
-            """,
-            unsafe_allow_html=True,
-        )
+            st.markdown("---")
         st.sidebar.header("Photo Ops Suite")
         tool = st.sidebar.radio(
             "Choose a tool",
