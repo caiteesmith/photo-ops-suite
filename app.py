@@ -30,7 +30,7 @@ st.markdown(
 
 def main():
     with st.sidebar:
-        st.image("assets/csp-logo-lilac.png", width=150)
+        st.image("assets/csp-logo-slate.png", width=125)
         st.markdown("[caiteesmithphotography.com](https://www.caiteesmithphotography.com)")
         st.sidebar.header("Photo Ops Suite")
         tool = st.sidebar.radio(
