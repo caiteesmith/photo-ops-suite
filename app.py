@@ -31,7 +31,8 @@ st.markdown(
 def main():
     with st.sidebar:
         st.image("assets/csp-logo-lilac.png", width=150)
-        st.sidebar.header("📸 Photo Ops Suite")
+        st.markdown("[caiteesmithphotography.com](https://www.caiteesmithphotography.com)")
+        st.sidebar.header("Photo Ops Suite")
         tool = st.sidebar.radio(
             "Choose a tool",
             ["Timeline Builder", "Sunset & Golden Hour", "Post-Processing Calculator"],
