@@ -33,14 +33,24 @@ def main():
         with st.sidebar:
             st.markdown(
                 """
-                <a href="https://www.caiteesmithphotography.com" target="_blank">
-                    <img src="app/static/logo.png" style="width:150px;" />
+                <style>
+                .sidebar-logo img {
+                    cursor: pointer;
+                    transition: opacity 0.15s ease;
+                }
+                .sidebar-logo img:hover {
+                    opacity: 0.85;
+                }
+                </style>
+
+                <a href="https://www.caiteesmithphotography.com"
+                target="_blank"
+                class="sidebar-logo">
+                    <img src="app/static/logo.png" width="160" />
                 </a>
                 """,
                 unsafe_allow_html=True,
             )
-
-            st.markdown("---")
         st.sidebar.header("Photo Ops Suite")
         tool = st.sidebar.radio(
             "Choose a tool",
