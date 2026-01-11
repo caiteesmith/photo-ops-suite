@@ -98,14 +98,13 @@ def calculate_sunset_windows(
         blue_end=blue_end,
     )
 
-
 def render_sunset_checker() -> None:
-    st.subheader("🌅 Sunset & Golden Hour")
+    st.subheader("🌅 Sunset & Golden Hour Checker")
 
     st.markdown(
         """
-        Look up **sunset**, **golden hour**, and **blue hour** for a wedding location.
-        You can search by **address/venue** or enter **lat/lon** directly.
+        Look up sunset, golden hour, and blue hour for a wedding location.
+        You can search by city/state or enter lat/lon directly.
         """
     )
 
@@ -119,7 +118,7 @@ def render_sunset_checker() -> None:
     if mode == "Search by address / venue":
         query = st.text_input(
             "Search location",
-            placeholder="e.g., The Ryland Inn, Whitehouse Station, NJ",
+            placeholder="e.g., Saratoga Springs, NY",
         )
 
         colA, colB = st.columns([1, 1])
@@ -133,7 +132,6 @@ def render_sunset_checker() -> None:
                 except Exception as e:
                     st.error(str(e))
 
-        # If we already looked it up, reuse it
         lat = st.session_state.get("sunset_lat", lat)
         lon = st.session_state.get("sunset_lon", lon)
         display_name = st.session_state.get("sunset_display", display_name)
@@ -177,19 +175,20 @@ def render_sunset_checker() -> None:
         st.error(f"Couldn't calculate sunset windows: {e}")
         return
 
+    a, b = st.columns(2)
+    with a:
+        st.markdown("### ✨ Golden Hour")
+        st.write(f"**Start:** {_fmt(results.golden_start)}")
+        st.write(f"**End:** {_fmt(results.golden_end)}")
+    with b:
+        st.markdown("### 🌌 Blue Hour")
+        st.write(f"**Start:** {_fmt(results.blue_start)}")
+        st.write(f"**End:** {_fmt(results.blue_end)}")
+
+    st.divider()
+
     st.write(f"**Timezone:** {results.timezone}")
     m1, m2, m3 = st.columns(3)
     m1.metric("Sunrise", _fmt(results.sunrise))
     m2.metric("Solar Noon", _fmt(results.solar_noon))
     m3.metric("Sunset", _fmt(results.sunset))
-
-    st.divider()
-    a, b = st.columns(2)
-    with a:
-        st.markdown("### ✨ Golden Hour (Evening)")
-        st.write(f"**Start:** {_fmt(results.golden_start)}")
-        st.write(f"**End:** {_fmt(results.golden_end)}")
-    with b:
-        st.markdown("### 🌌 Blue Hour (Evening)")
-        st.write(f"**Start:** {_fmt(results.blue_start)}")
-        st.write(f"**End:** {_fmt(results.blue_end)}")
