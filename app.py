@@ -15,6 +15,19 @@ from tools.timeline_builder import (
     coverage_totals,
 )
 
+st.markdown(
+    """
+    <style>
+        div[data-testid="stExpander"] {
+            border-radius: 14px;
+            border: 1px solid #EEE;
+            background-color: #FAFAFA;
+        }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 DEFAULTS_PATH = Path(__file__).parent / "defaults.json"
 
 
