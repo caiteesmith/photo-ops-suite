@@ -1,0 +1,36 @@
+{
+  "coverage_hours": 8,
+
+  "buffer_minutes": 15,
+  "flatlay_details_minutes": 30,
+  "getting_dressed_minutes": 30,
+  "individual_portraits_minutes": 30,
+
+  "travel_gr_to_ceremony_minutes": 15,
+  "travel_ceremony_to_reception_minutes": 15,
+
+  "first_look_minutes": 15,
+  "receiving_line_minutes": 15,
+
+  "couple_portraits_minutes": 45,
+  "wedding_party_portraits_minutes": 30,
+  "family_portraits_minutes": 30,
+  "tuckaway_minutes": 30,
+
+  "ceremony_minutes": 30,
+  "cocktail_hour_minutes": 60,
+
+  "golden_hour_window_minutes": 20,
+  "minutes_per_family_grouping": 3,
+
+  "reception_event_defaults": {
+    "grand_entrance_minutes": 10,
+    "first_dance_minutes": 8,
+    "parent_dances_minutes": 10,
+    "toasts_minutes": 20,
+    "dinner_minutes": 60,
+    "cake_cutting_minutes": 10,
+    "bouquet_toss_minutes": 8,
+    "garter_toss_minutes": 5
+  }
+}
