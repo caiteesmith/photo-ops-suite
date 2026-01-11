@@ -292,32 +292,31 @@ def compute_windows(results: Dict[str, Any], on_date: date, golden_minutes_am: i
 # UI
 # -------------------------
 def render_sunset_checker():
-    st.subheader("🌅 Sunset, Golden Hour, and Blue Hour Checker")
+    st.subheader("🌅 Sunset, Golden Hour, & Blue Hour Checker")
 
     st.markdown(
         """
-        This tool helps you plan portrait timing **fast**:
-        - **Sunset** (the anchor)
-        - **Golden hour** (best light for portraits)
-        - **Blue hour** (the dreamy post-sunset glow)
+        This tool helps you plan portrait timing fast:
+        - Sunset
+        - Golden hour
+        - Blue hour
 
-        It supports **searching by address/venue name** *or* entering **lat/lon** directly.
+        It supports searching by address/venue name *or* entering lat/lon directly.
         """
     )
 
-    with st.expander("Altitude note (why it matters)", expanded=False):
+    with st.expander("A note about altitude", expanded=False):
         st.markdown(
             """
             Altitude can shift these times slightly because the sun becomes visible earlier (and sets later)
             when you're higher above sea level.
 
-            - Most public APIs return times using standard astronomical models and local conditions (and often assume sea-level).
+            - Most APIs return times using standard astronomical models and local conditions (and often assume sea-level).
             - In practice, altitude usually changes sunrise/sunset by seconds to a couple minutes, but it can matter
             in mountainous locations or when you're cutting it close.
 
             **What this app does:**  
-            If we can detect elevation from geocoding (Open-Meteo), we'll display it.  
-            It's mainly a planning reference, not required for the calculation.
+            If we can detect elevation from geocoding, we'll display it. It's mainly a planning reference, not required for the calculation.
             """
         )
 
@@ -360,7 +359,7 @@ def render_sunset_checker():
             query = st.text_input(
                 "Search",
                 value=st.session_state.get("last_query", ""),
-                placeholder="Try: 'Franklin Plaza, NJ' or '123 Main St, Morristown, NJ'",
+                placeholder="Try: 'Franklin Plaza, Troy, NY' or '123 Main St, Morristown, NJ'",
                 help="If street-level searches fail, try adding city/state, or search the venue name + town.",
             )
 
@@ -460,8 +459,6 @@ def render_sunset_checker():
             golden_pm_start, golden_pm_end = windows["golden_pm"]
             blue_pm_start, blue_pm_end = windows["blue_pm"]
 
-            st.markdown("## 🧭 Quick Plan")
-
             st.markdown(
                 f"""
                 <div style="padding: 14px 16px; border: 1px solid #E6E9ED; border-radius: 16px; background: #F8F9FA;">
@@ -470,14 +467,14 @@ def render_sunset_checker():
                 </div>
 
                 <div style="padding: 14px 16px; border: 1px solid #E6E9ED; border-radius: 16px; background: #F8F9FA; margin-top: 10px;">
-                <div style="font-size: 13px; opacity: 0.7; margin-bottom: 6px;">Golden hour (PM)</div>
-                <div style="font-size: 24px; font-weight: 700;">{_fmt_time(golden_pm_start)}–{_fmt_time(golden_pm_end)}</div>
+                <div style="font-size: 13px; opacity: 0.7; margin-bottom: 6px;">Golden hour</div>
+                <div style="font-size: 24px; font-weight: 700;">{_fmt_time(golden_pm_start)}-{_fmt_time(golden_pm_end)}</div>
                 <div style="font-size: 12px; opacity: 0.65; margin-top: 6px;">(using your slider: {int(golden_minutes_pm)} min before sunset)</div>
                 </div>
 
                 <div style="padding: 14px 16px; border: 1px solid #E6E9ED; border-radius: 16px; background: #F8F9FA; margin-top: 10px;">
-                <div style="font-size: 13px; opacity: 0.7; margin-bottom: 6px;">Blue hour (PM)</div>
-                <div style="font-size: 24px; font-weight: 700;">{_fmt_time(blue_pm_start)}–{_fmt_time(blue_pm_end)}</div>
+                <div style="font-size: 13px; opacity: 0.7; margin-bottom: 6px;">Blue hour</div>
+                <div style="font-size: 24px; font-weight: 700;">{_fmt_time(blue_pm_start)}-{_fmt_time(blue_pm_end)}</div>
                 </div>
                 """,
                 unsafe_allow_html=True,
@@ -506,10 +503,10 @@ def render_sunset_checker():
             r1, r2 = st.columns(2)
             with r1:
                 st.markdown("**Evening**")
-                st.write(f"- **Golden hour:** {_fmt_time(golden_pm_start)}–{_fmt_time(golden_pm_end)}")
+                st.write(f"- **Golden hour:** {_fmt_time(golden_pm_start)}-{_fmt_time(golden_pm_end)}")
                 st.write(f"- **Sunset:** {_fmt_time(sunset)}")
                 st.write(f"- **Dusk:** {_fmt_time(dusk)}")
-                st.write(f"- **Blue hour:** {_fmt_time(blue_pm_start)}–{_fmt_time(blue_pm_end)}")
+                st.write(f"- **Blue hour:** {_fmt_time(blue_pm_start)}-{_fmt_time(blue_pm_end)}")
                 st.write(f"- **Last light:** {results.get('last_light') or '—'}")
 
             with r2:
@@ -517,8 +514,8 @@ def render_sunset_checker():
                 st.write(f"- **First light:** {results.get('first_light') or '—'}")
                 st.write(f"- **Dawn:** {_fmt_time(dawn)}")
                 st.write(f"- **Sunrise:** {_fmt_time(sunrise)}")
-                st.write(f"- **Golden hour:** {_fmt_time(golden_am_start)}–{_fmt_time(golden_am_end)}")
-                st.write(f"- **Blue hour:** {_fmt_time(blue_am_start)}–{_fmt_time(blue_am_end)}")
+                st.write(f"- **Golden hour:** {_fmt_time(golden_am_start)}-{_fmt_time(golden_am_end)}")
+                st.write(f"- **Blue hour:** {_fmt_time(blue_am_start)}-{_fmt_time(blue_am_end)}")
 
             with st.expander("More details", expanded=False):
                 st.write(f"**Solar noon:** {windows.get('solar_noon') or '—'}")
