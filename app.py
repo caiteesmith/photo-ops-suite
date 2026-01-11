@@ -74,7 +74,7 @@ def render_timeline_builder():
         """
     )
 
-    with st.expander("How to use this timeline builder", expanded=True):
+    with st.expander("How to use this timeline builder", expanded=False):
         st.markdown(
             """
             **1. Start with coverage**
