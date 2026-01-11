@@ -60,7 +60,7 @@ def render_timeline_builder():
         st.markdown("### Photographer arrival")
         photographer_arrival_str = st.text_input("Photographer arrival time (optional)", value="")
         arrival_setup_minutes = st.number_input(
-            "Arrival / setup minutes (optional)",
+            "Arrival/setup minutes (optional)",
             min_value=0,
             max_value=60,
             value=int(defaults.get("arrival_setup_minutes", 0)),
@@ -366,7 +366,7 @@ def render_timeline_builder():
             top_blocks = coverage_allocation_top_blocks(blocks, coverage_start, coverage_end, top_n=8)
 
             with st.expander("⏱️ Coverage allocation", expanded=True):
-                st.markdown("**(what to shorten to stay within coverage)**")
+                st.caption("**(What to shorten to stay within coverage)**")
                 m1, m2, m3 = st.columns(3)
                 m1.metric("Minutes in coverage", totals["in_coverage_minutes"])
                 m2.metric("Total scheduled minutes", totals["scheduled_minutes_total"])
