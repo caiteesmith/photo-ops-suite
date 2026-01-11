@@ -62,6 +62,9 @@ class EventInputs:
     coverage_hours: float
     coverage_end: datetime
 
+    photographer_arrival_time: Optional[datetime]
+    arrival_setup_minutes: int
+
     ceremony_start: datetime
     ceremony_minutes: int
 

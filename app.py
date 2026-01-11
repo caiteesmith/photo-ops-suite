@@ -57,6 +57,16 @@ def render_timeline_builder():
 
         coverage_start_str = st.text_input("Coverage start time", value="12:00 PM")
 
+        st.markdown("### Photographer arrival")
+        photographer_arrival_str = st.text_input("Photographer arrival time (optional)", value="")
+        arrival_setup_minutes = st.number_input(
+            "Arrival / setup minutes (optional)",
+            min_value=0,
+            max_value=60,
+            value=int(defaults.get("arrival_setup_minutes", 0)),
+        )
+        photographer_arrival_time = parse_optional_time(wedding_date, photographer_arrival_str)
+
         coverage_hours_choice = st.selectbox(
             "Coverage hours",
             options=[6, 8, 10, 12, "Custom"],
@@ -214,7 +224,7 @@ def render_timeline_builder():
         mother_son = st.toggle("Mother/son dance", value=False)
         toasts = st.toggle("Toasts", value=True)
         dinner = st.toggle("Dinner block", value=True)
-        dancefloor_coverage = st.toggle("Dancefloor coverage (open dancing)", value=True)
+        dancefloor_coverage = st.toggle("Dancefloor coverage", value=True)
         dancefloor_mins = st.number_input("Dancefloor coverage minutes", min_value=0, max_value=240, value=int(defaults.get("dancefloor_minutes", 90)))
 
         cake_cutting = st.toggle("Cake cutting", value=True)
@@ -300,6 +310,9 @@ def render_timeline_builder():
                 coverage_start=coverage_start,
                 coverage_hours=float(coverage_hours),
                 coverage_end=coverage_end,
+
+                photographer_arrival_time=photographer_arrival_time,
+                arrival_setup_minutes=int(arrival_setup_minutes),
 
                 ceremony_start=ceremony_start,
                 ceremony_minutes=int(ceremony_minutes),

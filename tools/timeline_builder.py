@@ -258,6 +258,33 @@ def build_timeline(inputs: EventInputs) -> Tuple[List[TimelineBlock], List[str]]
     # ------------------------
     t = inputs.coverage_start
 
+    # ------------------------
+    # PHOTOGRAPHER ARRIVAL
+    # ------------------------
+    if inputs.photographer_arrival_time is not None:
+        _add_block(
+            blocks,
+            "Photographer arrival",
+            inputs.photographer_arrival_time,
+            0,
+            inputs.getting_ready_location,
+            notes="Arrival on-site (park, unload, greet planner, quick walk-through).",
+            audience="Vendor",
+            kind="event",
+        )
+
+        if inputs.arrival_setup_minutes and inputs.arrival_setup_minutes > 0:
+            _add_block(
+                blocks,
+                "Arrival / gear setup",
+                inputs.photographer_arrival_time,
+                int(inputs.arrival_setup_minutes),
+                inputs.getting_ready_location,
+                notes="Unload, prep gear, scout light, confirm timeline, detail staging.",
+                audience="Vendor",
+                kind="photo",
+            )
+
     t = _add_block(
         blocks,
         "Flat lay & details",
@@ -657,7 +684,7 @@ def build_timeline(inputs: EventInputs) -> Tuple[List[TimelineBlock], List[str]]
         # main dancing block (continuous)
         _ = _add_block(
             blocks,
-            "Dancefloor coverage (open dancing)",
+            "Dancefloor coverage",
             dancefloor_start,
             re.dancefloor_minutes,
             inputs.reception_location,
