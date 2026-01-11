@@ -34,13 +34,13 @@ def parse_optional_time(wedding_date: str, raw: str):
 def main():
     st.set_page_config(page_title="Photo Ops Suite", layout="wide")
     st.title("📸 Photo Ops Suite")
+    render_timeline_builder()
 
     # st.sidebar.header("Tools")
     # tool = st.sidebar.radio("Choose a tool", ["Timeline Builder"], index=0)
 
     # if tool == "Timeline Builder":
     #     render_timeline_builder()
-
 
 def render_timeline_builder():
     defaults = load_defaults()
