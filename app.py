@@ -50,7 +50,7 @@ def parse_optional_time(wedding_date: str, raw: str):
 
 
 def main():
-    st.title("📸 Photo Ops Suite")
+    # st.title("📸 Photo Ops Suite")
     render_timeline_builder()
 
     # st.sidebar.header("Tools")
@@ -63,7 +63,47 @@ def render_timeline_builder():
     defaults = load_defaults()
     event_defaults = defaults.get("reception_event_defaults", {})
 
-    st.subheader("Timeline Builder")
+    st.subheader("📸 Wedding Day Timeline Builder")
+    st.markdown(
+        """
+        This timeline builder is designed for wedding photographers who want a **clear, realistic flow**
+        to the wedding day, without stressing, over-stuffing, or guesswork.
+
+        Build a timeline that respects **coverage limits**, **portrait priorities**, and **real-world logistics**,
+        then quickly spot where time is tight and where adjustments will make the biggest impact.
+        """
+    )
+
+    with st.expander("How to use this timeline builder", expanded=True):
+        st.markdown(
+            """
+            **1. Start with coverage**
+            - Enter your coverage start time and total hours first.
+            - This defines the boundaries of the day and keeps everything grounded in reality.
+
+            **2. Work top-down through the day**
+            - Add arrival, getting ready, portraits, ceremony, and reception details in order.
+            - If you don't use a section, set it to **0 minutes** or leave it off.
+
+            **3. First look matters**
+            - If a first look is selected, *all portraits (except sunset)* are completed **before the ceremony**.
+            - If not, portraits shift to the post-ceremony window, often overlapping cocktail hour.
+
+            **4. Be honest about family dynamics**
+            - Divorced parents, strained relationships, or large families often require extra time.
+            - This tool adds notes and small buffers where those realities usually show up.
+
+            **5. Watch the coverage allocation**
+            - Use the **Coverage allocation** section to see what's eating the most time.
+            - If you're over coverage, portraits and travel are usually the fastest places to adjust.
+
+            **6. Use the timeline as a planning tool, not a promise**
+            - This is a working timeline to help guide conversations with couples and planners.
+            - Real wedding days flex. The goal is clarity, not rigidity.
+            """
+        )
+
+    st.caption("Designed to support thoughtful planning, not stressful, over-packed timelines.")
 
     colA, colB = st.columns([1, 1])
 
