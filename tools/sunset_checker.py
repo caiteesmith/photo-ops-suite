@@ -212,7 +212,6 @@ def geocode_location(query: str) -> List[GeoCandidate]:
 
     return candidates
 
-
 # -------------------------
 # Sunrise/Sunset + Twilight
 # -------------------------
@@ -257,19 +256,17 @@ def compute_windows(results: Dict[str, Any], on_date: date, golden_minutes_am: i
     """
     sunrise_t = _parse_12h_time(results.get("sunrise"))
     sunset_t = _parse_12h_time(results.get("sunset"))
-    dawn_t = _parse_12h_time(results.get("dawn"))   # civil twilight begin
-    dusk_t = _parse_12h_time(results.get("dusk"))   # civil twilight end
+    dawn_t = _parse_12h_time(results.get("dawn"))
+    dusk_t = _parse_12h_time(results.get("dusk"))
 
     sunrise = _build_dt(on_date, sunrise_t) if sunrise_t else None
     sunset = _build_dt(on_date, sunset_t) if sunset_t else None
     dawn = _build_dt(on_date, dawn_t) if dawn_t else None
     dusk = _build_dt(on_date, dusk_t) if dusk_t else None
 
-    # Blue hour windows
     blue_am = (dawn, sunrise) if dawn and sunrise else (None, None)
     blue_pm = (sunset, dusk) if sunset and dusk else (None, None)
 
-    # Golden hour windows (based on your chosen minutes)
     golden_am = (sunrise, _add_minutes(sunrise, golden_minutes_am)) if sunrise else (None, None)
     golden_pm = (_add_minutes(sunset, -golden_minutes_pm), sunset) if sunset else (None, None)
 
@@ -299,32 +296,31 @@ def render_sunset_checker():
 
     st.markdown(
         """
-This tool helps you plan portrait timing **fast**:
-- **Sunset** (the anchor)
-- **Golden hour** (best light for portraits)
-- **Blue hour** (the dreamy post-sunset glow)
+        This tool helps you plan portrait timing **fast**:
+        - **Sunset** (the anchor)
+        - **Golden hour** (best light for portraits)
+        - **Blue hour** (the dreamy post-sunset glow)
 
-It supports **searching by address/venue name** *or* entering **lat/lon** directly.
-"""
+        It supports **searching by address/venue name** *or* entering **lat/lon** directly.
+        """
     )
 
     with st.expander("Altitude note (why it matters)", expanded=False):
         st.markdown(
             """
-**Altitude can shift these times slightly** because the sun becomes visible earlier (and sets later)
-when you’re higher above sea level.
+            Altitude can shift these times slightly because the sun becomes visible earlier (and sets later)
+            when you're higher above sea level.
 
-- Most public APIs return times using standard astronomical models and local conditions (and often assume sea-level).
-- In practice, altitude usually changes sunrise/sunset by **seconds to a couple minutes**, but it can matter
-  in mountainous locations or when you’re cutting it close.
+            - Most public APIs return times using standard astronomical models and local conditions (and often assume sea-level).
+            - In practice, altitude usually changes sunrise/sunset by seconds to a couple minutes, but it can matter
+            in mountainous locations or when you're cutting it close.
 
-**What this app does:**  
-If we can detect elevation from geocoding (Open-Meteo), we’ll display it.  
-It’s mainly a planning reference — not required for the calculation.
-"""
+            **What this app does:**  
+            If we can detect elevation from geocoding (Open-Meteo), we'll display it.  
+            It's mainly a planning reference, not required for the calculation.
+            """
         )
 
-    # ✅ FIX: define hints BEFORE any widget uses them (prevents UnboundLocalError on reruns)
     if "tz_hint" not in st.session_state:
         st.session_state["tz_hint"] = ""
     if "last_candidates" not in st.session_state:
@@ -368,7 +364,6 @@ It’s mainly a planning reference — not required for the calculation.
                 help="If street-level searches fail, try adding city/state, or search the venue name + town.",
             )
 
-            # Search button (prevents constant rate-limit failures & the annoying 'Couldn't find' while typing)
             do_search = st.button("Search location")
 
             candidates: List[GeoCandidate] = st.session_state.get("last_candidates", [])
@@ -399,11 +394,9 @@ It’s mainly a planning reference — not required for the calculation.
                 elevation_m = picked.elevation_m
                 location_label = picked.label
 
-                # ✅ If we got a timezone from Open-Meteo, use it as a helpful default
                 if picked.timezone:
                     st.session_state["tz_hint"] = picked.timezone
 
-                # Show picked details
                 st.caption(f"Picked: {location_label}")
                 st.caption(f"Lat/Lon: {lat:.5f}, {lon:.5f}")
                 if elevation_m is not None:
@@ -460,7 +453,6 @@ It’s mainly a planning reference — not required for the calculation.
                 golden_minutes_pm=int(golden_minutes_pm),
             )
 
-            # --- PROMINENT SUMMARY (no columns; no truncation) ---
             sunset = windows["sunset"]
             golden_pm_start, golden_pm_end = windows["golden_pm"]
             blue_pm_start, blue_pm_end = windows["blue_pm"]
@@ -469,22 +461,22 @@ It’s mainly a planning reference — not required for the calculation.
 
             st.markdown(
                 f"""
-<div style="padding: 14px 16px; border: 1px solid #E6E9ED; border-radius: 16px; background: #F8F9FA;">
-  <div style="font-size: 13px; opacity: 0.7; margin-bottom: 6px;">Sunset</div>
-  <div style="font-size: 28px; font-weight: 700;">{_fmt_time(sunset)}</div>
-</div>
+                <div style="padding: 14px 16px; border: 1px solid #E6E9ED; border-radius: 16px; background: #F8F9FA;">
+                <div style="font-size: 13px; opacity: 0.7; margin-bottom: 6px;">Sunset</div>
+                <div style="font-size: 28px; font-weight: 700;">{_fmt_time(sunset)}</div>
+                </div>
 
-<div style="padding: 14px 16px; border: 1px solid #E6E9ED; border-radius: 16px; background: #F8F9FA; margin-top: 10px;">
-  <div style="font-size: 13px; opacity: 0.7; margin-bottom: 6px;">Golden hour (PM)</div>
-  <div style="font-size: 24px; font-weight: 700;">{_fmt_time(golden_pm_start)}–{_fmt_time(golden_pm_end)}</div>
-  <div style="font-size: 12px; opacity: 0.65; margin-top: 6px;">(using your slider: {int(golden_minutes_pm)} min before sunset)</div>
-</div>
+                <div style="padding: 14px 16px; border: 1px solid #E6E9ED; border-radius: 16px; background: #F8F9FA; margin-top: 10px;">
+                <div style="font-size: 13px; opacity: 0.7; margin-bottom: 6px;">Golden hour (PM)</div>
+                <div style="font-size: 24px; font-weight: 700;">{_fmt_time(golden_pm_start)}–{_fmt_time(golden_pm_end)}</div>
+                <div style="font-size: 12px; opacity: 0.65; margin-top: 6px;">(using your slider: {int(golden_minutes_pm)} min before sunset)</div>
+                </div>
 
-<div style="padding: 14px 16px; border: 1px solid #E6E9ED; border-radius: 16px; background: #F8F9FA; margin-top: 10px;">
-  <div style="font-size: 13px; opacity: 0.7; margin-bottom: 6px;">Blue hour (PM)</div>
-  <div style="font-size: 24px; font-weight: 700;">{_fmt_time(blue_pm_start)}–{_fmt_time(blue_pm_end)}</div>
-</div>
-""",
+                <div style="padding: 14px 16px; border: 1px solid #E6E9ED; border-radius: 16px; background: #F8F9FA; margin-top: 10px;">
+                <div style="font-size: 13px; opacity: 0.7; margin-bottom: 6px;">Blue hour (PM)</div>
+                <div style="font-size: 24px; font-weight: 700;">{_fmt_time(blue_pm_start)}–{_fmt_time(blue_pm_end)}</div>
+                </div>
+                """,
                 unsafe_allow_html=True,
             )
 
