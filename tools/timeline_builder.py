@@ -318,7 +318,7 @@ def build_timeline(inputs: EventInputs) -> Tuple[List[TimelineBlock], List[str]]
         # Couple portraits
         t = _add_block(
             blocks,
-            "Couple portraits (pre-ceremony)",
+            "Couple portraits",
             t,
             inputs.couple_portraits_minutes,
             inputs.ceremony_location,
@@ -331,7 +331,7 @@ def build_timeline(inputs: EventInputs) -> Tuple[List[TimelineBlock], List[str]]
         # Wedding party portraits
         t = _add_block(
             blocks,
-            "Wedding party portraits (pre-ceremony)",
+            "Wedding party portraits",
             t,
             inputs.wedding_party_portraits_minutes,
             inputs.ceremony_location,
@@ -352,7 +352,7 @@ def build_timeline(inputs: EventInputs) -> Tuple[List[TimelineBlock], List[str]]
 
         t = _add_block(
             blocks,
-            "Family portraits (pre-ceremony)",
+            "Family portraits",
             t,
             fam_minutes,
             inputs.ceremony_location,
@@ -540,6 +540,19 @@ def build_timeline(inputs: EventInputs) -> Tuple[List[TimelineBlock], List[str]]
     t = _add_travel(blocks, t, inputs.travel_ceremony_to_reception_minutes, "Ceremony → Reception")
 
     # Reception start anchor (optional)
+    # ✅ Reception start marker (shows in timeline)
+    if inputs.reception_start is not None:
+        _add_block(
+            blocks,
+            "Reception start",
+            inputs.reception_start,
+            0,
+            inputs.reception_location,
+            notes="Planned reception start time.",
+            audience="Vendor",
+            kind="event",
+        )
+
     if inputs.reception_start and t > inputs.reception_start:
         late = minutes_between(inputs.reception_start, t)
         warnings.append(f"Arrives {late} min after reception start time you entered (portraits/travel may be too long).")
@@ -693,6 +706,8 @@ def blocks_to_dataframe(blocks: List[TimelineBlock]) -> pd.DataFrame:
     for b in blocks:
         rows.append(
             {
+                "StartDT": b.start,
+                "EndDT": b.end,
                 "Start": safe_fmt_time(b.start),
                 "End": safe_fmt_time(b.end),
                 "Block": b.name,
@@ -703,15 +718,20 @@ def blocks_to_dataframe(blocks: List[TimelineBlock]) -> pd.DataFrame:
                 "Kind": b.kind,
             }
         )
-    return pd.DataFrame(rows)
+    df = pd.DataFrame(rows)
+    df = df.sort_values(["StartDT", "EndDT", "Block"]).drop(columns=["StartDT", "EndDT"]).reset_index(drop=True)
+    return df
 
 
 def blocks_to_text(blocks: List[TimelineBlock], audience_filter: str | None = None) -> str:
+    sorted_blocks = sorted(blocks, key=lambda b: (b.start, b.end, b.name))
+
     lines: List[str] = []
-    for b in blocks:
+    for b in sorted_blocks:
         if audience_filter and b.audience != audience_filter:
             continue
-        if b.kind == "coverage" and b.start == b.end:
+
+        if b.duration_minutes == 0:
             lines.append(f"{safe_fmt_time(b.start)} • {b.name}")
             if b.notes:
                 lines.append(f"  - {b.notes}")
@@ -720,4 +740,5 @@ def blocks_to_text(blocks: List[TimelineBlock], audience_filter: str | None = No
         lines.append(f"{safe_fmt_time(b.start)}–{safe_fmt_time(b.end)} • {b.name} ({b.location})")
         if b.notes:
             lines.append(f"  - {b.notes}")
+
     return "\n".join(lines)

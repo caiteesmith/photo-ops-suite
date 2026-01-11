@@ -88,19 +88,19 @@ def render_timeline_builder():
 
         st.markdown("### Travel")
         travel_gr_to_ceremony = st.number_input(
-            "Travel: getting ready → ceremony (min)",
+            "Getting ready → ceremony (min)",
             min_value=0,
             max_value=240,
             value=int(defaults.get("travel_gr_to_ceremony_minutes", 15)),
         )
         travel_ceremony_to_reception = st.number_input(
-            "Travel: ceremony → reception (min)",
+            "Ceremony → reception (min)",
             min_value=0,
             max_value=240,
             value=int(defaults.get("travel_ceremony_to_reception_minutes", 15)),
         )
 
-        st.markdown("### Big decisions")
+        st.markdown("### Big Decisions")
         first_look = st.toggle("First look", value=True)
         protect_cocktail_hour = st.toggle("Protect cocktail hour (minimize portraits during cocktail hour)", value=True)
 
@@ -190,7 +190,7 @@ def render_timeline_builder():
                 value=int(defaults.get("family_portraits_minutes", 30)),
             )
 
-        st.markdown("### Cocktail hour + light anchors")
+        st.markdown("### Cocktail Hour + Sunset")
         cocktail_hour_minutes = st.number_input(
             "Cocktail hour length (min)",
             min_value=30,
@@ -205,7 +205,7 @@ def render_timeline_builder():
             value=int(defaults.get("golden_hour_window_minutes", 20)),
         )
 
-        st.markdown("### Reception timing + events")
+        st.markdown("### Reception")
         reception_start_str = st.text_input("Reception start time (optional)", value="")
 
         grand_entrance = st.toggle("Grand entrance", value=True)
@@ -353,7 +353,7 @@ def render_timeline_builder():
             top_blocks = coverage_allocation_top_blocks(blocks, coverage_start, coverage_end, top_n=8)
 
             with st.expander("⏱️ Coverage allocation", expanded=True):
-                st.markdown("**(wWat to shorten to stay within coverage)**")
+                st.markdown("**(what to shorten to stay within coverage)**")
                 m1, m2, m3 = st.columns(3)
                 m1.metric("Minutes in coverage", totals["in_coverage_minutes"])
                 m2.metric("Total scheduled minutes", totals["scheduled_minutes_total"])
