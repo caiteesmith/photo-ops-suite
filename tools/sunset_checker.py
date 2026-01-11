@@ -321,6 +321,14 @@ def render_sunset_checker():
                 st.caption(f"Picked: {location_label}")
                 st.caption(f"Lat/Lon: {lat:.5f}, {lon:.5f}")
 
+                # Safe map render (NO zoom arg)
+                try:
+                    lat_f, lon_f = float(lat), float(lon)
+                except (TypeError, ValueError):
+                    st.warning("Map preview unavailable: invalid latitude/longitude.")
+                else:
+                    st.map(pd.DataFrame([{"lat": lat_f, "lon": lon_f}]), use_container_width=True)
+
         else:
             lat = float(st.number_input("Latitude", value=40.7128, format="%.6f"))
             lon = float(st.number_input("Longitude", value=-74.0060, format="%.6f"))
@@ -333,14 +341,6 @@ def render_sunset_checker():
         if lat is None or lon is None:
             st.info("Enter a location to see results.")
             return
-
-        # Safe map render (NO zoom arg)
-        try:
-            lat_f, lon_f = float(lat), float(lon)
-        except (TypeError, ValueError):
-            st.warning("Map preview unavailable: invalid latitude/longitude.")
-        else:
-            st.map(pd.DataFrame([{"lat": lat_f, "lon": lon_f}]), use_container_width=True)
 
         try:
             on_date = _parse_date_yyyy_mm_dd(wedding_date)
