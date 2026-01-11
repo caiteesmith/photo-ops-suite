@@ -11,7 +11,7 @@ class FamilyDynamics:
     remarried_parents: bool = False
     strained_relationships: bool = False
     finicky_family_members: bool = False
-    notes: str = ""  # e.g. “Don’t pair X with Y. Do bride’s side first.”
+    notes: str = ""
 
 @dataclass(frozen=True)
 class ReceptionEvents:
@@ -22,65 +22,65 @@ class ReceptionEvents:
     mother_son_dance: bool = False
     toasts: bool = True
     dinner: bool = True
+
+    dancefloor_coverage: bool = True
+
     cake_cutting: bool = True
     bouquet_toss: bool = False
     garter_toss: bool = False
 
-    # optional hard times (if planner provides them)
+    # optional hard times
     grand_entrance_time: Optional[datetime] = None
     first_dance_time: Optional[datetime] = None
     parent_dances_time: Optional[datetime] = None
     toasts_time: Optional[datetime] = None
     dinner_start_time: Optional[datetime] = None
+
+    # events that typically happen during dancing
     cake_cutting_time: Optional[datetime] = None
     bouquet_toss_time: Optional[datetime] = None
     garter_toss_time: Optional[datetime] = None
 
-    # default durations (minutes)
+    # durations
     grand_entrance_minutes: int = 10
     first_dance_minutes: int = 8
     parent_dances_minutes: int = 10
     toasts_minutes: int = 20
     dinner_minutes: int = 60
+
+    dancefloor_minutes: int = 90
+
     cake_cutting_minutes: int = 10
     bouquet_toss_minutes: int = 8
     garter_toss_minutes: int = 5
 
 @dataclass(frozen=True)
 class EventInputs:
-    wedding_date: Optional[str]  # "YYYY-MM-DD"
+    wedding_date: Optional[str]
 
-    # Coverage constraint
     coverage_start: datetime
-    coverage_hours: float  # e.g. 6, 8, 10, 12
-    coverage_end: datetime  # computed in app.py
+    coverage_hours: float
+    coverage_end: datetime
 
-    # Ceremony anchors
     ceremony_start: datetime
-    ceremony_minutes: int  # 30–90+
+    ceremony_minutes: int
 
-    # Locations
     getting_ready_location: str
     ceremony_location: str
     reception_location: str
 
-    # Travel
     travel_gr_to_ceremony_minutes: int
     travel_ceremony_to_reception_minutes: int
 
-    # Big decisions
     first_look: bool
     receiving_line: bool
     receiving_line_minutes: int
 
-    # Cocktail hour context
     cocktail_hour_minutes: int
     protect_cocktail_hour: bool
 
-    # Family dynamics
     family_dynamics: FamilyDynamics
 
-    # Photo blocks
     buffer_minutes: int
     flatlay_details_minutes: int
     getting_dressed_minutes: int
@@ -91,15 +91,12 @@ class EventInputs:
     family_portraits_minutes: int
     tuckaway_minutes: int
 
-    # Optional family sizing
     family_groupings: Optional[int]
     minutes_per_family_grouping: int
 
-    # Optional light anchor
     sunset_time: Optional[datetime]
     golden_hour_window_minutes: int
 
-    # Reception anchors & coverage
     reception_start: Optional[datetime]
     reception_events: ReceptionEvents
 
@@ -111,7 +108,7 @@ class TimelineBlock:
     location: str
     notes: str = ""
     audience: Audience = "Vendor"
-    kind: str = "photo"  # "travel", "buffer", "event", "photo", "coverage"
+    kind: str = "Photo"  # "Travel", "Buffer", "Event", "Photo", "Coverage"
 
     @property
     def duration_minutes(self) -> int:

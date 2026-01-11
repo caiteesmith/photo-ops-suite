@@ -1,6 +1,3 @@
-# =========================
-# file: app.py
-# =========================
 from __future__ import annotations
 import json
 from pathlib import Path
@@ -38,18 +35,18 @@ def main():
     st.set_page_config(page_title="Photo Ops Suite", layout="wide")
     st.title("📸 Photo Ops Suite")
 
-    st.sidebar.header("Tools")
-    tool = st.sidebar.radio("Choose a tool", ["Timeline Builder"], index=0)
+    # st.sidebar.header("Tools")
+    # tool = st.sidebar.radio("Choose a tool", ["Timeline Builder"], index=0)
 
-    if tool == "Timeline Builder":
-        render_timeline_builder()
+    # if tool == "Timeline Builder":
+    #     render_timeline_builder()
 
 
 def render_timeline_builder():
     defaults = load_defaults()
     event_defaults = defaults.get("reception_event_defaults", {})
 
-    st.subheader("Wedding Day Timeline Builder")
+    st.subheader("🗓️ Timeline Builder (Coverage-aware)")
 
     colA, colB = st.columns([1, 1])
 
@@ -115,7 +112,7 @@ def render_timeline_builder():
             value=int(defaults.get("receiving_line_minutes", 15)),
         )
 
-        st.markdown("### Family dynamics")
+        st.markdown("### Family dynamics (adds buffer + notes)")
         divorced_parents = st.toggle("Divorced parents", value=False)
         remarried_parents = st.toggle("Remarried parents", value=False)
         strained_relationships = st.toggle("Strained relationships", value=False)
@@ -130,7 +127,7 @@ def render_timeline_builder():
             value=int(defaults.get("buffer_minutes", 15)),
         )
         flatlay_details_minutes = st.number_input(
-            "Flat lay & details (min)",
+            "Flat lay + details (min)",
             min_value=0,
             max_value=90,
             value=int(defaults.get("flatlay_details_minutes", 30)),
@@ -148,7 +145,7 @@ def render_timeline_builder():
             value=int(defaults.get("individual_portraits_minutes", 30)),
         )
         tuckaway_minutes = st.number_input(
-            "Tuckaway before ceremony (min)",
+            "Tuckaway before ceremony (guest arrivals + ceremony details) (min)",
             min_value=0,
             max_value=60,
             value=int(defaults.get("tuckaway_minutes", 30)),
@@ -193,7 +190,7 @@ def render_timeline_builder():
                 value=int(defaults.get("family_portraits_minutes", 30)),
             )
 
-        st.markdown("### Cocktail hour")
+        st.markdown("### Cocktail hour + light anchors")
         cocktail_hour_minutes = st.number_input(
             "Cocktail hour length (min)",
             min_value=30,
@@ -202,13 +199,13 @@ def render_timeline_builder():
         )
         sunset_time_str = st.text_input("Sunset time (optional)", value="")
         golden_window = st.number_input(
-            "Sunset portrait window (min)",
+            "Golden hour portrait window (min)",
             min_value=10,
             max_value=40,
             value=int(defaults.get("golden_hour_window_minutes", 20)),
         )
 
-        st.markdown("### Reception")
+        st.markdown("### Reception timing + events")
         reception_start_str = st.text_input("Reception start time (optional)", value="")
 
         grand_entrance = st.toggle("Grand entrance", value=True)
@@ -217,6 +214,9 @@ def render_timeline_builder():
         mother_son = st.toggle("Mother/son dance", value=False)
         toasts = st.toggle("Toasts", value=True)
         dinner = st.toggle("Dinner block", value=True)
+        dancefloor_coverage = st.toggle("Dancefloor coverage (open dancing)", value=True)
+        dancefloor_mins = st.number_input("Dancefloor coverage minutes", min_value=0, max_value=240, value=int(defaults.get("dancefloor_minutes", 90)))
+
         cake_cutting = st.toggle("Cake cutting", value=True)
         bouquet_toss = st.toggle("Bouquet toss", value=False)
         garter_toss = st.toggle("Garter toss", value=False)
@@ -267,6 +267,10 @@ def render_timeline_builder():
                 mother_son_dance=bool(mother_son),
                 toasts=bool(toasts),
                 dinner=bool(dinner),
+
+                dancefloor_coverage=bool(dancefloor_coverage),
+                dancefloor_minutes=int(dancefloor_mins),
+
                 cake_cutting=bool(cake_cutting),
                 bouquet_toss=bool(bouquet_toss),
                 garter_toss=bool(garter_toss),
@@ -344,19 +348,18 @@ def render_timeline_builder():
                 f"{coverage_start.strftime('%-I:%M %p')}–{coverage_end.strftime('%-I:%M %p')}"
             )
 
-            # --- Coverage allocation panel ---
             totals = coverage_totals(blocks, coverage_start, coverage_end)
             alloc_kind = coverage_allocation_by_kind(blocks, coverage_start, coverage_end)
             top_blocks = coverage_allocation_top_blocks(blocks, coverage_start, coverage_end, top_n=8)
 
             with st.expander("⏱️ Coverage allocation", expanded=True):
-                st.markdown("What to shorten to stay within coverage")
+                st.markdown("**(wWat to shorten to stay within coverage)**")
                 m1, m2, m3 = st.columns(3)
                 m1.metric("Minutes in coverage", totals["in_coverage_minutes"])
                 m2.metric("Total scheduled minutes", totals["scheduled_minutes_total"])
                 m3.metric("Minutes past coverage", totals["overage_minutes"])
 
-                st.markdown("**Minutes used  by category**")
+                st.markdown("**Minutes used by category**")
                 if len(alloc_kind) == 0:
                     st.caption("No in-coverage minutes to summarize yet.")
                 else:
@@ -365,7 +368,7 @@ def render_timeline_builder():
                 st.markdown("### Final timeline")
                 st.dataframe(df, use_container_width=True, hide_index=True)
 
-                st.markdown("**Biggest time sinks**")
+                st.markdown("**Biggest time sinks (in coverage)**")
                 if len(top_blocks) == 0:
                     st.caption("No blocks overlap with the coverage window yet.")
                 else:
@@ -379,8 +382,6 @@ def render_timeline_builder():
             if warnings:
                 for w in warnings:
                     st.warning(w)
-
-            st.dataframe(df, use_container_width=True, hide_index=True)
 
             st.markdown("### Exports")
             csv_bytes = df.to_csv(index=False).encode("utf-8")

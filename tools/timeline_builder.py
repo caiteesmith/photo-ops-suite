@@ -113,7 +113,6 @@ def _add_coverage_end_marker(blocks: List[TimelineBlock], inputs: EventInputs) -
 
 
 # ---------- Coverage allocation helpers ----------
-
 def _overlap_minutes(a_start: datetime, a_end: datetime, w_start: datetime, w_end: datetime) -> int:
     """
     Minutes of overlap between [a_start, a_end] and [w_start, w_end].
@@ -125,15 +124,13 @@ def _overlap_minutes(a_start: datetime, a_end: datetime, w_start: datetime, w_en
     return int((end - start).total_seconds() // 60)
 
 
-def coverage_allocation_by_kind(
-    blocks: List[TimelineBlock],
-    coverage_start: datetime,
-    coverage_end: datetime
-) -> pd.DataFrame:
+def coverage_allocation_by_kind(blocks: List[TimelineBlock], coverage_start: datetime, coverage_end: datetime) -> pd.DataFrame:
     """
-    Returns time IN coverage window, grouped by Kind.
-    Displays combined string: '90 min (1.5 hr)'.
+    Minutes IN coverage window by Kind.
+    Displays: '90 min (1.5 hr)'.
     """
+    dancefloor = _dancefloor_intervals(blocks)
+
     rows = []
     for b in blocks:
         if b.kind == "coverage":
@@ -143,42 +140,46 @@ def coverage_allocation_by_kind(
         if mins <= 0:
             continue
 
+        if b.kind == "event" and b.name in {"Cake cutting", "Bouquet toss", "Garter toss"} and dancefloor:
+            embedded = _embedded_in_dancefloor_minutes(b, dancefloor, coverage_start, coverage_end)
+            mins = max(0, mins - embedded)
+
+        if mins <= 0:
+            continue
+
         rows.append({"Kind": b.kind, "Minutes": mins})
 
     if not rows:
         return pd.DataFrame(columns=["Kind", "Time Used"])
 
     df = pd.DataFrame(rows)
-
     grouped = (
         df.groupby("Kind", as_index=False)["Minutes"]
         .sum()
         .sort_values("Minutes", ascending=False)
     )
-
-    grouped["Time Used"] = grouped["Minutes"].apply(
-        lambda m: f"{m} min ({round(m / 60, 2)} hr)"
-    )
-
+    grouped["Time Used"] = grouped["Minutes"].apply(lambda m: f"{m} min ({round(m / 60, 2)} hr)")
     return grouped[["Kind", "Time Used"]]
 
+def coverage_allocation_top_blocks(blocks: List[TimelineBlock], coverage_start: datetime, coverage_end: datetime, top_n: int = 8) -> pd.DataFrame:
+    """
+    Picks top_n blocks by minutes-in-coverage, then displays chronologically.
+    """
+    dancefloor = _dancefloor_intervals(blocks)
 
-def coverage_allocation_top_blocks(
-    blocks: List[TimelineBlock],
-    coverage_start: datetime,
-    coverage_end: datetime,
-    top_n: int = 8
-) -> pd.DataFrame:
-    """
-    Shows top N time sinks by minutes-in-coverage,
-    displayed chronologically with combined time string.
-    """
     rows = []
     for b in blocks:
         if b.kind == "coverage":
             continue
 
         mins = _overlap_minutes(b.start, b.end, coverage_start, coverage_end)
+        if mins <= 0:
+            continue
+
+        if b.kind == "event" and b.name in {"Cake cutting", "Bouquet toss", "Garter toss"} and dancefloor:
+            embedded = _embedded_in_dancefloor_minutes(b, dancefloor, coverage_start, coverage_end)
+            mins = max(0, mins - embedded)
+
         if mins <= 0:
             continue
 
@@ -196,22 +197,12 @@ def coverage_allocation_top_blocks(
         )
 
     if not rows:
-        return pd.DataFrame(
-            columns=["Start", "End", "Block", "Kind", "Time Used", "Location"]
-        )
+        return pd.DataFrame(columns=["Start", "End", "Block", "Kind", "Time Used", "Location"])
 
     df = pd.DataFrame(rows)
 
-    # Pick top N by duration
     df = df.sort_values("MinutesSort", ascending=False).head(top_n)
-
-    # Display chronologically
-    df = (
-        df.sort_values("StartDT")
-        .drop(columns=["StartDT", "MinutesSort"])
-        .reset_index(drop=True)
-    )
-
+    df = df.sort_values("StartDT").drop(columns=["StartDT", "MinutesSort"]).reset_index(drop=True)
     return df
 
 def coverage_totals(blocks: List[TimelineBlock], coverage_start: datetime, coverage_end: datetime) -> Dict[str, int]:
@@ -239,6 +230,23 @@ def coverage_totals(blocks: List[TimelineBlock], coverage_start: datetime, cover
         "overage_minutes": int(overage),
     }
 
+def _dancefloor_intervals(blocks: List[TimelineBlock]) -> List[tuple[datetime, datetime]]:
+    intervals = []
+    for b in blocks:
+        if b.name.startswith("Dancefloor coverage"):
+            intervals.append((b.start, b.end))
+    return intervals
+
+def _embedded_in_dancefloor_minutes(
+    b: TimelineBlock,
+    dancefloor_intervals: List[tuple[datetime, datetime]],
+    coverage_start: datetime,
+    coverage_end: datetime,
+) -> int:
+    total = 0
+    for ds, de in dancefloor_intervals:
+        total += _overlap_minutes(b.start, b.end, max(ds, coverage_start), min(de, coverage_end))
+    return total
 
 # ---------- Main timeline builder ----------
 def build_timeline(inputs: EventInputs) -> Tuple[List[TimelineBlock], List[str]]:
@@ -572,6 +580,35 @@ def build_timeline(inputs: EventInputs) -> Tuple[List[TimelineBlock], List[str]]
         t = _add_block(blocks, name, t, minutes, inputs.reception_location, notes=notes, audience="Vendor", kind="event")
         t = _add_buffer(blocks, t, inputs.buffer_minutes, inputs.reception_location)
 
+    def place_embedded_event(name: str, enabled: bool, when: Optional[datetime], minutes: int, default_offset_min: int):
+        """
+        Places event inside dancefloor window without moving the main cursor.
+        If time not provided, uses dancefloor_start + offset.
+        """
+        if not enabled:
+            return
+        if not dancefloor_start or not dancefloor_end:
+            return  # no dancefloor window to embed into
+
+        start_time = when if when is not None else add_minutes(dancefloor_start, default_offset_min)
+
+        # clamp into dancefloor window
+        if start_time < dancefloor_start:
+            start_time = dancefloor_start
+        if start_time > add_minutes(dancefloor_end, -minutes):
+            start_time = add_minutes(dancefloor_end, -minutes)
+
+        _add_block(
+            blocks,
+            name,
+            start_time,
+            minutes,
+            inputs.reception_location,
+            notes="Happens during dancefloor coverage.",
+            audience="Vendor",
+            kind="event",
+        )
+
     # Hard-time events
     schedule_event_if_toggle("Grand entrance", re.grand_entrance, re.grand_entrance_time, re.grand_entrance_minutes, "If couple is announced into reception.")
     schedule_event_if_toggle("First dance", re.first_dance, re.first_dance_time, re.first_dance_minutes, "If scheduled at reception.")
@@ -604,9 +641,19 @@ def build_timeline(inputs: EventInputs) -> Tuple[List[TimelineBlock], List[str]]
         )
         t = _add_buffer(blocks, t, inputs.buffer_minutes, inputs.reception_location)
 
-    schedule_event_if_toggle("Cake cutting", re.cake_cutting, re.cake_cutting_time, re.cake_cutting_minutes, "Cake cutting.")
-    schedule_event_if_toggle("Bouquet toss", re.bouquet_toss, re.bouquet_toss_time, re.bouquet_toss_minutes, "Bouquet toss.")
-    schedule_event_if_toggle("Garter toss", re.garter_toss, re.garter_toss_time, re.garter_toss_minutes, "Garter toss.")
+    # If we have dancefloor coverage, embed these events inside it.
+    # If not, fall back to sequential scheduling (your existing schedule_event_if_toggle calls).
+    if re.dancefloor_coverage:
+        place_embedded_event("Cake cutting", re.cake_cutting, re.cake_cutting_time, re.cake_cutting_minutes, default_offset_min=15)
+        place_embedded_event("Bouquet toss", re.bouquet_toss, re.bouquet_toss_time, re.bouquet_toss_minutes, default_offset_min=45)
+        place_embedded_event("Garter toss", re.garter_toss, re.garter_toss_time, re.garter_toss_minutes, default_offset_min=55)
+
+        # After dancefloor, advance t to the end of dancefloor for anything that follows
+        t = dancefloor_end
+    else:
+        schedule_event_if_toggle("Cake cutting", re.cake_cutting, re.cake_cutting_time, re.cake_cutting_minutes, "Cake cutting.")
+        schedule_event_if_toggle("Bouquet toss", re.bouquet_toss, re.bouquet_toss_time, re.bouquet_toss_minutes, "Bouquet toss.")
+        schedule_event_if_toggle("Garter toss", re.garter_toss, re.garter_toss_time, re.garter_toss_minutes, "Garter toss.")
 
     # Golden hour reminder
     if inputs.sunset_time:
@@ -616,6 +663,25 @@ def build_timeline(inputs: EventInputs) -> Tuple[List[TimelineBlock], List[str]]
             f"Sunset is around {safe_fmt_time(inputs.sunset_time)}. Consider reserving "
             f"{inputs.golden_hour_window_minutes} min for golden hour portraits around "
             f"{safe_fmt_time(golden_start)}–{safe_fmt_time(golden_end)}."
+        )
+
+    # Dancefloor coverage
+    dancefloor_start = None
+    dancefloor_end = None
+
+    if re.dancefloor_coverage:
+        dancefloor_start = t
+        dancefloor_end = add_minutes(dancefloor_start, re.dancefloor_minutes)
+
+        t = _add_block(
+            blocks,
+            f"Dancefloor coverage (open dancing)",
+            dancefloor_start,
+            re.dancefloor_minutes,
+            inputs.reception_location,
+            notes="General dancing coverage. Cake + bouquet/garter usually happen during this window.",
+            audience="Vendor",
+            kind="photo",
         )
 
     # Coverage constraint check
