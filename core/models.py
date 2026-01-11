@@ -80,7 +80,7 @@ class EventInputs:
     # Family dynamics
     family_dynamics: FamilyDynamics
 
-    # Photo blocks (your defaults)
+    # Photo blocks
     buffer_minutes: int
     flatlay_details_minutes: int
     getting_dressed_minutes: int
@@ -89,7 +89,7 @@ class EventInputs:
     couple_portraits_minutes: int
     wedding_party_portraits_minutes: int
     family_portraits_minutes: int
-    tuckaway_minutes: int  # PRE-ceremony: guest arrivals + ceremony details
+    tuckaway_minutes: int
 
     # Optional family sizing
     family_groupings: Optional[int]

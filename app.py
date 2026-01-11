@@ -115,7 +115,7 @@ def render_timeline_builder():
             value=int(defaults.get("receiving_line_minutes", 15)),
         )
 
-        st.markdown("### Family dynamics (adds buffer + notes)")
+        st.markdown("### Family dynamics")
         divorced_parents = st.toggle("Divorced parents", value=False)
         remarried_parents = st.toggle("Remarried parents", value=False)
         strained_relationships = st.toggle("Strained relationships", value=False)
@@ -130,7 +130,7 @@ def render_timeline_builder():
             value=int(defaults.get("buffer_minutes", 15)),
         )
         flatlay_details_minutes = st.number_input(
-            "Flat lay + details (min)",
+            "Flat lay & details (min)",
             min_value=0,
             max_value=90,
             value=int(defaults.get("flatlay_details_minutes", 30)),
@@ -349,7 +349,8 @@ def render_timeline_builder():
             alloc_kind = coverage_allocation_by_kind(blocks, coverage_start, coverage_end)
             top_blocks = coverage_allocation_top_blocks(blocks, coverage_start, coverage_end, top_n=8)
 
-            with st.expander("⏱️ Coverage allocation (what to shorten to stay within coverage)", expanded=True):
+            with st.expander("⏱️ Coverage allocation", expanded=True):
+                st.markdown("What to shorten to stay within coverage")
                 m1, m2, m3 = st.columns(3)
                 m1.metric("Minutes in coverage", totals["in_coverage_minutes"])
                 m2.metric("Total scheduled minutes", totals["scheduled_minutes_total"])

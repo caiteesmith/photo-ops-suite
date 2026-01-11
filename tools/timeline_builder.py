@@ -47,7 +47,7 @@ def _add_buffer(
         return t
     return _add_block(
         blocks,
-        name="Buffer / transition",
+        name="Buffer/transition",
         start=t,
         minutes=buffer_minutes,
         location=location,
@@ -66,7 +66,7 @@ def _add_travel(blocks: List[TimelineBlock], t: datetime, travel_minutes: int, f
         start=t,
         minutes=travel_minutes,
         location="In transit",
-        notes="Includes loading up + parking + walking time as needed.",
+        notes="Includes loading up, parking, & walking time as needed.",
         audience="Vendor",
         kind="travel",
     )
@@ -252,7 +252,7 @@ def build_timeline(inputs: EventInputs) -> Tuple[List[TimelineBlock], List[str]]
 
     t = _add_block(
         blocks,
-        "Flat lay + details",
+        "Flat lay & details",
         t,
         inputs.flatlay_details_minutes,
         inputs.getting_ready_location,
@@ -264,7 +264,7 @@ def build_timeline(inputs: EventInputs) -> Tuple[List[TimelineBlock], List[str]]
 
     t = _add_block(
         blocks,
-        "Getting dressed + final touches",
+        "Getting dressed",
         t,
         inputs.getting_dressed_minutes,
         inputs.getting_ready_location,
@@ -297,7 +297,7 @@ def build_timeline(inputs: EventInputs) -> Tuple[List[TimelineBlock], List[str]]
             t,
             inputs.first_look_minutes,
             inputs.ceremony_location,
-            notes="Private moment + first reactions.",
+            notes="Private moment & first reactions.",
             audience="Vendor",
             kind="photo",
         )
@@ -362,11 +362,11 @@ def build_timeline(inputs: EventInputs) -> Tuple[List[TimelineBlock], List[str]]
         if tuck_mins > 0:
             t = _add_block(
                 blocks,
-                "Tuckaway (pre-ceremony) — guest arrivals + ceremony details",
+                "Tuckaway before ceremony",
                 t,
                 tuck_mins,
                 inputs.ceremony_location,
-                notes="Guest arrivals candids + ceremony space details (programs, florals, wide shots, signage).",
+                notes="Guest arrivals candids & ceremony space details (programs, florals, wide shots, signage).",
                 audience="Vendor",
                 kind="photo",
             )
@@ -386,7 +386,7 @@ def build_timeline(inputs: EventInputs) -> Tuple[List[TimelineBlock], List[str]]
     else:
         if inputs.tuckaway_minutes > 0:
             warnings.append(
-                "No time available before the ceremony for tuckaway (guest arrivals + ceremony details). "
+                "No time available before the ceremony for tuckaway "
                 "Start coverage earlier or reduce pre-ceremony blocks."
             )
 
@@ -459,7 +459,7 @@ def build_timeline(inputs: EventInputs) -> Tuple[List[TimelineBlock], List[str]]
             t,
             inputs.cocktail_hour_minutes,
             inputs.ceremony_location,
-            notes="Candids + room atmosphere. Portraits are already completed pre-ceremony.",
+            notes="Candids & reception details",
             audience="Vendor",
             kind="photo",
         )
@@ -473,7 +473,7 @@ def build_timeline(inputs: EventInputs) -> Tuple[List[TimelineBlock], List[str]]
             t,
             fam_minutes,
             inputs.ceremony_location,
-            notes=("Keep list tight + assign a wrangler. " + dyn_note).strip(),
+            notes=("Keep list tight & assign a wrangler. " + dyn_note).strip(),
             audience="Vendor",
             kind="photo",
         )
