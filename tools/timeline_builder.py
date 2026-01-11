@@ -710,14 +710,17 @@ def build_timeline(inputs: EventInputs) -> Tuple[List[TimelineBlock], List[str]]
         schedule_event_if_toggle("Bouquet toss", re.bouquet_toss, re.bouquet_toss_time, re.bouquet_toss_minutes, "Bouquet toss.")
         schedule_event_if_toggle("Garter toss", re.garter_toss, re.garter_toss_time, re.garter_toss_minutes, "Garter toss.")
 
-    # Golden hour reminder
-    if inputs.sunset_time:
-        golden_start = add_minutes(inputs.sunset_time, -30)
-        golden_end = add_minutes(golden_start, inputs.golden_hour_window_minutes)
-        warnings.append(
-            f"Sunset is around {safe_fmt_time(inputs.sunset_time)}. Consider reserving "
-            f"{inputs.golden_hour_window_minutes} min for golden hour portraits around "
-            f"{safe_fmt_time(golden_start)}–{safe_fmt_time(golden_end)}."
+    # Sunset marker (shows in timeline)
+    if inputs.sunset_time is not None:
+        _add_block(
+            blocks,
+            "Sunset",
+            inputs.sunset_time,
+            0,
+            inputs.reception_location or inputs.ceremony_location,
+            notes="Approximate sunset time.",
+            audience="Vendor",
+            kind="event",
         )
 
     # Coverage constraint check
