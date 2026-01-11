@@ -433,16 +433,13 @@ def build_timeline(inputs: EventInputs) -> Tuple[List[TimelineBlock], List[str]]
         )
         t = _add_buffer(blocks, t, inputs.buffer_minutes, inputs.ceremony_location)
 
-    # Quick reset
-    t = _add_block(
+    # Only add reset time if user wants buffer time
+    t = _add_buffer(
         blocks,
-        "Quick reset (post-ceremony)",
         t,
-        max(8, int(inputs.buffer_minutes)),
+        inputs.buffer_minutes,
         inputs.ceremony_location,
-        notes="Water, touch-ups, bustle, regroup before portraits.",
-        audience="Vendor",
-        kind="buffer",
+        notes="Quick reset (water, touch-ups, bustle, regroup).",
     )
 
     fam_minutes = _family_minutes(inputs)
