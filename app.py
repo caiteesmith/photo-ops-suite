@@ -29,9 +29,6 @@ st.markdown(
 )
 
 def main():
-    if "tool" not in st.session_state:
-        st.session_state.tool = "timeline"
-
     with st.sidebar:
         st.image("assets/logo.png", width=125)
         st.markdown(
@@ -48,21 +45,18 @@ def main():
             unsafe_allow_html=True,
         )
         st.sidebar.header("Photo Ops Suite")
-        st.markdown("### 🧰 Tools")
+        tool = st.sidebar.radio(
+            "Choose a tool",
+            ["Timeline Builder", "Sunset & Golden Hour", "Post-Processing Calculator"],
+            index=0,
+        )
 
-        def tool_button(label, key):
-            active = st.session_state.tool == key
-            if st.button(
-                label,
-                use_container_width=True,
-                type="primary" if active else "secondary",
-            ):
-                st.session_state.tool = key
-                st.rerun()
-
-        tool_button("📅 Timeline Builder", "timeline")
-        tool_button("🌅 Sunset Checker", "sunset")
-        tool_button("🖥️ Post-Processing Calculator", "post")
+    if tool == "Timeline Builder":
+        render_timeline_builder()
+    elif tool == "Sunset & Golden Hour":
+        render_sunset_checker()
+    elif tool == "Post-Processing Calculator":
+        render_post_processing_calculator()
 
 if __name__ == "__main__":
     main()
