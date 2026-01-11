@@ -57,15 +57,6 @@ def render_timeline_builder():
 
         coverage_start_str = st.text_input("Coverage start time", value="12:00 PM")
 
-        st.markdown("### Photographer arrival")
-        photographer_arrival_str = st.text_input("Photographer arrival time (optional)", value="")
-        arrival_setup_minutes = st.number_input(
-            "Arrival/setup minutes (optional)",
-            min_value=0,
-            max_value=60,
-            value=int(defaults.get("arrival_setup_minutes", 0)),
-        )
-
         coverage_hours_choice = st.selectbox(
             "Coverage hours",
             options=[6, 8, 10, 12, "Custom"],
@@ -88,6 +79,15 @@ def render_timeline_builder():
             min_value=10,
             max_value=120,
             value=int(defaults.get("ceremony_minutes", 30)),
+        )
+
+        st.markdown("### Photographer arrival")
+        photographer_arrival_str = st.text_input("Photographer arrival time (optional)", value="")
+        arrival_setup_minutes = st.number_input(
+            "Arrival/setup minutes (optional)",
+            min_value=0,
+            max_value=60,
+            value=int(defaults.get("arrival_setup_minutes", 0)),
         )
 
         photographer_arrival_time = parse_optional_time(wedding_date, photographer_arrival_str)
