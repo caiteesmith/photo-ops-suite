@@ -15,19 +15,6 @@ from tools.timeline_builder import (
     coverage_totals,
 )
 
-st.markdown(
-    """
-    <style>
-        div[data-testid="stExpander"] {
-            border-radius: 14px;
-            border: 1px solid #EEE;
-            background-color: #FAFAFA;
-        }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
-
 DEFAULTS_PATH = Path(__file__).parent / "defaults.json"
 
 
@@ -45,6 +32,18 @@ def parse_optional_time(wedding_date: str, raw: str):
 
 
 def main():
+    st.markdown(
+        """
+        <style>
+            div[data-testid="stExpander"] {
+                border-radius: 14px;
+                border: 1px solid #EEE;
+                background-color: #FAFAFA;
+            }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
     st.set_page_config(page_title="Photo Ops Suite", layout="wide")
     st.title("📸 Photo Ops Suite")
     render_timeline_builder()
