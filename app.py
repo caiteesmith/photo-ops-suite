@@ -49,7 +49,7 @@ def render_timeline_builder():
     defaults = load_defaults()
     event_defaults = defaults.get("reception_event_defaults", {})
 
-    st.subheader("🗓️ Timeline Builder (Coverage-aware)")
+    st.subheader("Wedding Day Timeline Builder")
 
     colA, colB = st.columns([1, 1])
 
@@ -193,7 +193,7 @@ def render_timeline_builder():
                 value=int(defaults.get("family_portraits_minutes", 30)),
             )
 
-        st.markdown("### Cocktail hour + light anchors")
+        st.markdown("### Cocktail hour")
         cocktail_hour_minutes = st.number_input(
             "Cocktail hour length (min)",
             min_value=30,
@@ -202,13 +202,13 @@ def render_timeline_builder():
         )
         sunset_time_str = st.text_input("Sunset time (optional)", value="")
         golden_window = st.number_input(
-            "Golden hour portrait window (min)",
+            "Sunset portrait window (min)",
             min_value=10,
             max_value=40,
             value=int(defaults.get("golden_hour_window_minutes", 20)),
         )
 
-        st.markdown("### Reception timing + events")
+        st.markdown("### Reception")
         reception_start_str = st.text_input("Reception start time (optional)", value="")
 
         grand_entrance = st.toggle("Grand entrance", value=True)
