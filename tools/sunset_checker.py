@@ -454,7 +454,7 @@ def render_sunset_checker():
                 <div style="font-size: 24px; font-weight: 700;">{_fmt_time(golden_pm_start)}-{_fmt_time(golden_pm_end)}</div>
                 </div>
 
-                <div style="padding: 14px 16px; border: 1px solid #E6E9ED; border-radius: 16px; background: #F8F9FA; margin-top: 10px;">
+                <div style="padding: 14px 16px; border: 1px solid #E6E9ED; border-radius: 16px; background: #F8F9FA; margin-top: 10px; margin-bottom: 10px">
                 <div style="font-size: 13px; opacity: 0.7; margin-bottom: 6px;">Blue hour</div>
                 <div style="font-size: 24px; font-weight: 700;">{_fmt_time(blue_pm_start)}-{_fmt_time(blue_pm_end)}</div>
                 </div>
@@ -462,7 +462,6 @@ def render_sunset_checker():
                 unsafe_allow_html=True,
             )
 
-            st.divider()
             st.caption(f"Location: {location_label or f'{lat:.5f}, {lon:.5f}'}")
             tz_display = windows.get("timezone") or (timezone_override.strip() if timezone_override.strip() else None)
             if tz_display:
