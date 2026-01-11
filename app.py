@@ -34,7 +34,7 @@ def main():
             st.markdown(
                 """
                 <a href="https://www.caiteesmithphotography.com" target="_blank">
-                    <img src="app/static/csp-logo-slate.png" style="width:150px;" />
+                    <img src="app/static/logo.png" style="width:150px;" />
                 </a>
                 """,
                 unsafe_allow_html=True,
