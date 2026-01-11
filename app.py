@@ -55,8 +55,7 @@ def main():
                 active = st.session_state["tool"] == key
                 if st.button(
                     label,
-                    use_container_width=True,
-                    type="primary" if active else "secondary",
+                    use_container_width=True
                 ):
                     st.session_state["tool"] = key
 
