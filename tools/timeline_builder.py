@@ -125,56 +125,94 @@ def _overlap_minutes(a_start: datetime, a_end: datetime, w_start: datetime, w_en
     return int((end - start).total_seconds() // 60)
 
 
-def coverage_allocation_by_kind(blocks: List[TimelineBlock], coverage_start: datetime, coverage_end: datetime) -> pd.DataFrame:
+def coverage_allocation_by_kind(
+    blocks: List[TimelineBlock],
+    coverage_start: datetime,
+    coverage_end: datetime
+) -> pd.DataFrame:
     """
-    Returns minutes IN coverage window, grouped by Kind (photo/event/travel/buffer).
-    Excludes 'coverage' marker.
+    Returns time IN coverage window, grouped by Kind.
+    Displays combined string: '90 min (1.5 hr)'.
     """
     rows = []
     for b in blocks:
         if b.kind == "coverage":
             continue
+
         mins = _overlap_minutes(b.start, b.end, coverage_start, coverage_end)
         if mins <= 0:
             continue
-        rows.append({"Kind": b.kind, "Minutes In Coverage": mins})
+
+        rows.append({"Kind": b.kind, "Minutes": mins})
 
     if not rows:
-        return pd.DataFrame(columns=["Kind", "Minutes In Coverage"])
+        return pd.DataFrame(columns=["Kind", "Time Used"])
 
     df = pd.DataFrame(rows)
-    out = df.groupby("Kind", as_index=False)["Minutes In Coverage"].sum().sort_values("Minutes In Coverage", ascending=False)
-    return out
+
+    grouped = (
+        df.groupby("Kind", as_index=False)["Minutes"]
+        .sum()
+        .sort_values("Minutes", ascending=False)
+    )
+
+    grouped["Time Used"] = grouped["Minutes"].apply(
+        lambda m: f"{m} min ({round(m / 60, 2)} hr)"
+    )
+
+    return grouped[["Kind", "Time Used"]]
 
 
-def coverage_allocation_top_blocks(blocks: List[TimelineBlock], coverage_start: datetime, coverage_end: datetime, top_n: int = 8) -> pd.DataFrame:
+def coverage_allocation_top_blocks(
+    blocks: List[TimelineBlock],
+    coverage_start: datetime,
+    coverage_end: datetime,
+    top_n: int = 8
+) -> pd.DataFrame:
     """
-    Shows the biggest 'time sinks' within coverage (minutes overlapped with coverage window).
+    Shows top N time sinks by minutes-in-coverage,
+    displayed chronologically with combined time string.
     """
     rows = []
     for b in blocks:
         if b.kind == "coverage":
             continue
+
         mins = _overlap_minutes(b.start, b.end, coverage_start, coverage_end)
         if mins <= 0:
             continue
+
         rows.append(
             {
+                "StartDT": b.start,
+                "Start": safe_fmt_time(b.start),
+                "End": safe_fmt_time(b.end),
                 "Block": b.name,
                 "Kind": b.kind,
-                "Minutes In Coverage": mins,
-                "Window": f"{safe_fmt_time(b.start)}–{safe_fmt_time(b.end)}",
+                "Time Used": f"{mins} min ({round(mins / 60, 2)} hr)",
                 "Location": b.location,
+                "MinutesSort": mins,
             }
         )
 
     if not rows:
-        return pd.DataFrame(columns=["Block", "Kind", "Minutes In Coverage", "Window", "Location"])
+        return pd.DataFrame(
+            columns=["Start", "End", "Block", "Kind", "Time Used", "Location"]
+        )
 
     df = pd.DataFrame(rows)
-    df = df.sort_values("Minutes In Coverage", ascending=False).head(top_n)
-    return df
 
+    # Pick top N by duration
+    df = df.sort_values("MinutesSort", ascending=False).head(top_n)
+
+    # Display chronologically
+    df = (
+        df.sort_values("StartDT")
+        .drop(columns=["StartDT", "MinutesSort"])
+        .reset_index(drop=True)
+    )
+
+    return df
 
 def coverage_totals(blocks: List[TimelineBlock], coverage_start: datetime, coverage_end: datetime) -> Dict[str, int]:
     """
