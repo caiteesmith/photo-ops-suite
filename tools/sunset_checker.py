@@ -296,29 +296,9 @@ def render_sunset_checker():
 
     st.markdown(
         """
-        This tool helps you plan portrait timing fast:
-        - Sunset
-        - Golden hour
-        - Blue hour
-
-        It supports searching by address/venue name *or* entering lat/lon directly.
+        This tool helps you plan sunset portrait timing fast. It supports searching by address/venue name *or* entering lat/lon directly.
         """
     )
-
-    with st.expander("A note about altitude", expanded=False):
-        st.markdown(
-            """
-            Altitude can shift these times slightly because the sun becomes visible earlier (and sets later)
-            when you're higher above sea level.
-
-            - Most APIs return times using standard astronomical models and local conditions (and often assume sea-level).
-            - In practice, altitude usually changes sunrise/sunset by seconds to a couple minutes, but it can matter
-            in mountainous locations or when you're cutting it close.
-
-            **What this app does:**  
-            If we can detect elevation from geocoding, we'll display it. It's mainly a planning reference, not required for the calculation.
-            """
-        )
 
     if "tz_hint" not in st.session_state:
         st.session_state["tz_hint"] = ""
@@ -345,7 +325,7 @@ def render_sunset_checker():
         st.markdown("### Location")
         mode = st.radio(
             "How do you want to set the location?",
-            ["Search by address / venue", "Enter lat/lon manually"],
+            ["Search by address / venue", "Enter latitude/longitude manually"],
             index=0,
             horizontal=True,
         )
@@ -410,6 +390,9 @@ def render_sunset_checker():
             elevation_m = float(st.number_input("Altitude (meters) (optional)", value=0.0, step=10.0))
             location_label = f"{lat:.5f}, {lon:.5f}"
 
+
+        st.map([{"lat": float(lat), "lon": float(lon)}], zoom=10)
+
         golden_minutes_am = 60
         golden_minutes_pm = 60
 
@@ -469,7 +452,6 @@ def render_sunset_checker():
                 <div style="padding: 14px 16px; border: 1px solid #E6E9ED; border-radius: 16px; background: #F8F9FA; margin-top: 10px;">
                 <div style="font-size: 13px; opacity: 0.7; margin-bottom: 6px;">Golden hour</div>
                 <div style="font-size: 24px; font-weight: 700;">{_fmt_time(golden_pm_start)}-{_fmt_time(golden_pm_end)}</div>
-                <div style="font-size: 12px; opacity: 0.65; margin-top: 6px;">(using your slider: {int(golden_minutes_pm)} min before sunset)</div>
                 </div>
 
                 <div style="padding: 14px 16px; border: 1px solid #E6E9ED; border-radius: 16px; background: #F8F9FA; margin-top: 10px;">
@@ -480,6 +462,7 @@ def render_sunset_checker():
                 unsafe_allow_html=True,
             )
 
+            st.divider()
             st.caption(f"Location: {location_label or f'{lat:.5f}, {lon:.5f}'}")
             tz_display = windows.get("timezone") or (timezone_override.strip() if timezone_override.strip() else None)
             if tz_display:
@@ -492,7 +475,7 @@ def render_sunset_checker():
             st.divider()
 
             # --- FULL DETAIL ---
-            st.markdown("### All windows")
+            st.markdown("### Sunset & Sunrise")
 
             sunrise = windows["sunrise"]
             golden_am_start, golden_am_end = windows["golden_am"]
@@ -516,13 +499,6 @@ def render_sunset_checker():
                 st.write(f"- **Sunrise:** {_fmt_time(sunrise)}")
                 st.write(f"- **Golden hour:** {_fmt_time(golden_am_start)}-{_fmt_time(golden_am_end)}")
                 st.write(f"- **Blue hour:** {_fmt_time(blue_am_start)}-{_fmt_time(blue_am_end)}")
-
-            with st.expander("More details", expanded=False):
-                st.write(f"**Solar noon:** {windows.get('solar_noon') or '—'}")
-                st.write(f"**Day length:** {windows.get('day_length') or '—'}")
-                st.write(f"**UTC offset (mins):** {windows.get('utc_offset') if windows.get('utc_offset') is not None else '—'}")
-
-            st.map([{"lat": float(lat), "lon": float(lon)}], zoom=10)
 
         except requests.HTTPError as e:
             st.error(f"Network/API error: {e}")
