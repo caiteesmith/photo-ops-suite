@@ -580,11 +580,10 @@ def build_timeline(inputs: EventInputs) -> Tuple[List[TimelineBlock], List[str]]
         t = _add_block(blocks, name, t, minutes, inputs.reception_location, notes=notes, audience="Vendor", kind="event")
         t = _add_buffer(blocks, t, inputs.buffer_minutes, inputs.reception_location)
 
+    dancefloor_start: Optional[datetime] = None
+    dancefloor_end: Optional[datetime] = None
+
     def place_embedded_event(name: str, enabled: bool, when: Optional[datetime], minutes: int, default_offset_min: int):
-        """
-        Places event inside dancefloor window without moving the main cursor.
-        If time not provided, uses dancefloor_start + offset.
-        """
         if not enabled:
             return
         if not dancefloor_start or not dancefloor_end:
@@ -641,8 +640,22 @@ def build_timeline(inputs: EventInputs) -> Tuple[List[TimelineBlock], List[str]]
         )
         t = _add_buffer(blocks, t, inputs.buffer_minutes, inputs.reception_location)
 
-    # If we have dancefloor coverage, embed these events inside it.
-    # If not, fall back to sequential scheduling (your existing schedule_event_if_toggle calls).
+    if re.dancefloor_coverage:
+        dancefloor_start = t
+        dancefloor_end = add_minutes(dancefloor_start, re.dancefloor_minutes)
+
+        # main dancing block (continuous)
+        _ = _add_block(
+            blocks,
+            "Dancefloor coverage (open dancing)",
+            dancefloor_start,
+            re.dancefloor_minutes,
+            inputs.reception_location,
+            notes="General dancing coverage. Cake + bouquet/garter usually happen during this window.",
+            audience="Vendor",
+            kind="photo",
+        )
+
     if re.dancefloor_coverage:
         place_embedded_event("Cake cutting", re.cake_cutting, re.cake_cutting_time, re.cake_cutting_minutes, default_offset_min=15)
         place_embedded_event("Bouquet toss", re.bouquet_toss, re.bouquet_toss_time, re.bouquet_toss_minutes, default_offset_min=45)
@@ -663,25 +676,6 @@ def build_timeline(inputs: EventInputs) -> Tuple[List[TimelineBlock], List[str]]
             f"Sunset is around {safe_fmt_time(inputs.sunset_time)}. Consider reserving "
             f"{inputs.golden_hour_window_minutes} min for golden hour portraits around "
             f"{safe_fmt_time(golden_start)}–{safe_fmt_time(golden_end)}."
-        )
-
-    # Dancefloor coverage
-    dancefloor_start = None
-    dancefloor_end = None
-
-    if re.dancefloor_coverage:
-        dancefloor_start = t
-        dancefloor_end = add_minutes(dancefloor_start, re.dancefloor_minutes)
-
-        t = _add_block(
-            blocks,
-            f"Dancefloor coverage (open dancing)",
-            dancefloor_start,
-            re.dancefloor_minutes,
-            inputs.reception_location,
-            notes="General dancing coverage. Cake + bouquet/garter usually happen during this window.",
-            audience="Vendor",
-            kind="photo",
         )
 
     # Coverage constraint check

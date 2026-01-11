@@ -46,7 +46,7 @@ def render_timeline_builder():
     defaults = load_defaults()
     event_defaults = defaults.get("reception_event_defaults", {})
 
-    st.subheader("🗓️ Timeline Builder (Coverage-aware)")
+    st.subheader("Timeline Builder")
 
     colA, colB = st.columns([1, 1])
 
