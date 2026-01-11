@@ -44,19 +44,25 @@ def main():
             """,
             unsafe_allow_html=True,
         )
+        
         st.sidebar.header("Photo Ops Suite")
-        tool = st.sidebar.radio(
-            "Choose a tool",
-            ["Timeline Builder", "Sunset & Golden Hour", "Post-Processing Calculator"],
-            index=0,
-        )
 
-    if tool == "Timeline Builder":
-        render_timeline_builder()
-    elif tool == "Sunset & Golden Hour":
-        render_sunset_checker()
-    elif tool == "Post-Processing Calculator":
-        render_post_processing_calculator()
+        if "tool" not in st.session_state:
+            st.session_state["tool"] = "timeline"
+            st.markdown("### 🧰 Tools")
+
+            def tool_button(label, key):
+                active = st.session_state["tool"] == key
+                if st.button(
+                    label,
+                    use_container_width=True,
+                    type="primary" if active else "secondary",
+                ):
+                    st.session_state["tool"] = key
+
+            tool_button("📅 Timeline Builder", "timeline")
+            tool_button("🌅 Sunset Checker", "sunset")
+            tool_button("🖥️ Post-Processing Calculator", "post")
 
 if __name__ == "__main__":
     main()
