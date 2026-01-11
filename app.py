@@ -29,20 +29,21 @@ st.markdown(
 )
 
 def main():
-    st.image("assets/csp-logo-lilac.png", width=150)
-    st.sidebar.header("📸 Photo Ops Suite")
-    tool = st.sidebar.radio(
-        "Choose a tool",
-        ["Timeline Builder", "Sunset & Golden Hour", "Post-Processing Calculator"],
-        index=0,
-    )
+    with st.sidebar:
+        st.image("assets/csp-logo-lilac.png", width=150)
+        st.sidebar.header("📸 Photo Ops Suite")
+        tool = st.sidebar.radio(
+            "Choose a tool",
+            ["Timeline Builder", "Sunset & Golden Hour", "Post-Processing Calculator"],
+            index=0,
+        )
 
-    if tool == "Timeline Builder":
-        render_timeline_builder()
-    elif tool == "Sunset & Golden Hour":
-        render_sunset_checker()
-    elif tool == "Post-Processing Calculator":
-        render_post_processing_calculator()
+        if tool == "Timeline Builder":
+            render_timeline_builder()
+        elif tool == "Sunset & Golden Hour":
+            render_sunset_checker()
+        elif tool == "Post-Processing Calculator":
+            render_post_processing_calculator()
 
 if __name__ == "__main__":
     main()
