@@ -5,8 +5,6 @@ It’s designed to help photographers create realistic timelines, plan around su
 
 Built with Python and Streamlit, Photo Ops Suite focuses on clarity, speed, and photographer-aware planning rather than rigid schedules or generic event tools.
 
----
-
 ## ✨ Why Photo Ops Suite Exists
 Wedding photographers constantly juggle:
 - Coverage limits  
@@ -20,10 +18,8 @@ Most existing tools are either too generic or not built for photographers.
 
 Photo Ops Suite is built *by* a wedding photographer *for* wedding photographers to reflect how wedding days actually run, not how they look in a perfectly optimized spreadsheet.
 
----
-
 ## 🧰 Included Tools
-### 🕒 Wedding Day Timeline Builder
+### Wedding Day Timeline Builder
 A comprehensive timeline planning tool that helps photographers:
 
 - Build a full wedding day timeline from coverage start to end
@@ -42,9 +38,7 @@ A comprehensive timeline planning tool that helps photographers:
 **Why does this matter?**  
 This helps photographers plan confidently, set realistic expectations with couples and planners, and avoid over-promising coverage.
 
----
-
-### 🌅 Sunset, Golden Hour & Blue Hour Checker
+### Sunset, Golden Hour & Blue Hour Checker
 A location-aware sunset planning tool designed with wedding days in mind.
 
 - Search by:
@@ -60,9 +54,7 @@ A location-aware sunset planning tool designed with wedding days in mind.
 **Why does this matter?**  
 This makes it easy to plan sunset portraits, advise couples on timing, and protect golden hour without guesswork.
 
----
-
-### 🖥️ Post-Processing Time Calculator
+### Post-Processing Time Calculator
 A workload estimation tool for photographers who want realistic editing expectations.
 - Estimate editing time based on:
   - Number of delivered images
@@ -78,9 +70,7 @@ A workload estimation tool for photographers who want realistic editing expectat
 **Why does this matter?**  
 This supports sustainable workflows and clearer turnaround communication.
 
----
-
-## 🧠 Design Philosophy
+## Design Philosophy
 Photo Ops Suite is built around a few core principles:
 
 - **Planning, not promises**  
@@ -94,8 +84,6 @@ Photo Ops Suite is built around a few core principles:
 
 - **Modular & extensible**  
   New tools can be added without disrupting existing workflows.
-
----
 
 ## 🛠️ Tech Stack
 - Python
