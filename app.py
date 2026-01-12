@@ -1,12 +1,13 @@
 from __future__ import annotations
+
+import streamlit as st
+
 from tools.timeline_builder_ui import render_timeline_builder
 from tools.sunset_checker import render_sunset_checker
 from tools.post_processing_calculator import render_post_processing_calculator
 from tools.codb_calculator import render_wedding_codb_calculator
 from tools.photographer_score import render_wedding_photographer_score
-from tools.finance_dashboard import render_personal_finance_dashboard
-
-import streamlit as st
+from tools.finance_dashboard import render_finance_dashboard  # <-- use the real name
 
 st.set_page_config(
     page_title="Photo Ops Suite | Caitee Smith Photography",
@@ -31,9 +32,23 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+PHOTO_OPS_TOOLS = [
+    "Timeline Builder",
+    "Sunset & Golden Hour",
+    "Post-Processing Calculator",
+    "CODB Calculator",
+    "What's Your Wedding Photographer Score?",
+]
+
+PERSONAL_TOOLS = [
+    "Personal Finance Dashboard",
+]
+
+
 def main():
     with st.sidebar:
         st.image("assets/logo.png", width=125)
+
         st.markdown(
             """
             <style>
@@ -47,22 +62,22 @@ def main():
             """,
             unsafe_allow_html=True,
         )
-        st.sidebar.header("Photo Ops Suite")
-        tool = st.sidebar.radio(
-            "Choose a tool",
-            ["Timeline Builder", "Sunset & Golden Hour", "Post-Processing Calculator", "CODB Calculator", "What's Your Wedding Photographer Score?"],
+
+        st.header("Photo Ops Suite")
+
+        section = st.radio(
+            "Section",
+            ["Wedding Tools", "Personal Tools"],
             index=0,
-        )
-    
-        st.divider
-        st.sidebar.header("Personal Tools")
-        tool = st.sidebar.radio(
-            "Choose a tool",
-            ["Personal Finance Dashboard"],
-            index=0,
+            key="sidebar_section",
         )
 
+        if section == "Wedding Tools":
+            tool = st.radio("Choose a tool", PHOTO_OPS_TOOLS, index=0, key="sidebar_wedding_tool")
+        else:
+            tool = st.radio("Choose a tool", PERSONAL_TOOLS, index=0, key="sidebar_personal_tool")
 
+    # Routing
     if tool == "Timeline Builder":
         render_timeline_builder()
     elif tool == "Sunset & Golden Hour":
@@ -74,7 +89,8 @@ def main():
     elif tool == "What's Your Wedding Photographer Score?":
         render_wedding_photographer_score()
     elif tool == "Personal Finance Dashboard":
-        render_personal_finance_dashboard()
+        render_finance_dashboard()
+
 
 if __name__ == "__main__":
     main()
