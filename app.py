@@ -48,7 +48,7 @@ def main():
         st.sidebar.header("Photo Ops Suite")
         tool = st.sidebar.radio(
             "Choose a tool",
-            ["Timeline Builder", "Sunset & Golden Hour", "Post-Processing Calculator"],
+            ["Timeline Builder", "Sunset & Golden Hour", "Post-Processing Calculator", "CODB Calculator"],
             index=0,
         )
 
