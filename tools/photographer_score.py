@@ -371,18 +371,9 @@ def compute_score(answers: Dict[str, object]) -> ScoreBreakdown:
 def render_wedding_photographer_score():
     st.title("🎯 What’s Your Wedding Photographer Score?")
     st.caption(
-        "Just for fun — but based on real sustainability signals (pricing, workflow, delivery, risk). "
-        "No judgment. Just data."
+        "Just for fun but based on real sustainability signals (pricing, workflow, delivery, risk). "
+        "No judgment, just data."
     )
-
-    # Optional: show any detected tool context (nice touch)
-    context = _autofill_from_codb_if_available()
-    with st.expander("Optional: Detected context from your other tools", expanded=False):
-        if context:
-            st.write("I found a few values already in your session state (if you've used other tools in this run):")
-            st.json(context, expanded=False)
-        else:
-            st.write("No other tool context detected yet — totally fine.")
 
     # --- Questions ---
     st.subheader("Answer honestly (this is for you)")
@@ -404,7 +395,7 @@ def render_wedding_photographer_score():
         st.markdown("### 💰 Pricing & Money")
         codb_known = st.radio(
             "Do you know your true cost per wedding (CODB)?",
-            ["Yes — I’ve done a CODB calculation", "Rough idea", "Nope"],
+            ["Yes, I've done a CODB calculation", "Rough idea", "Nope"],
             index=0,
             key="wps_codb_known",
         )
@@ -419,7 +410,7 @@ def render_wedding_photographer_score():
         bump()
 
         tax_plan = st.radio(
-            "Taxes: what’s your plan?",
+            "Taxes: what's your plan?",
             ["I set aside taxes from every payment", "I set aside sometimes / when I remember", "I wing it (April surprise)"],
             index=1,
             key="wps_tax_plan",
@@ -432,14 +423,14 @@ def render_wedding_photographer_score():
             min_value=0,
             max_value=60,
             value=18,
-            help="Include culling + editing + export + upload + delivery admin if you want it to be more honest.",
+            help="Include culling, editing, export, upload, & delivery admin if you want it to be more honest.",
             key="wps_editing_hours_per_wedding",
         )
         bump()
 
         batching = st.radio(
             "Do you batch editing into focused blocks?",
-            ["Yes — I batch editing in focused blocks", "Sometimes", "No — it’s mostly squeezed in randomly"],
+            ["Yes, I batch editing in focused blocks", "Sometimes", "No, it's mostly squeezed in randomly"],
             index=1,
             key="wps_batching",
         )
@@ -455,7 +446,7 @@ def render_wedding_photographer_score():
 
         editing_system = st.radio(
             "How would you describe your editing/workflow system?",
-            ["Strong system (presets, workflow, consistent steps)", "Some system, still evolving", "Chaos / depends on the job"],
+            ["Strong system (presets, workflow, consistent steps)", "Some system, still evolving", "Chaos/depends on the job"],
             index=1,
             key="wps_editing_system",
         )
@@ -482,21 +473,21 @@ def render_wedding_photographer_score():
 
         boundaries = st.radio(
             "Do you protect recovery time?",
-            ["Yes — I protect at least 1 day off weekly", "Sometimes", "Not really"],
+            ["Yes, I protect at least 1 day off weekly", "Sometimes", "Not really"],
             index=1,
             key="wps_boundaries",
         )
 
         buffering = st.radio(
             "Do you build buffers into timelines and delivery expectations?",
-            ["Yes — I build buffers into timelines + delivery", "Sometimes", "No"],
+            ["Yes, I build buffers into timelines + delivery", "Sometimes", "No"],
             index=1,
             key="wps_buffering",
         )
 
         st.markdown("### ⚠️ Risk & Resilience")
         backups = st.radio(
-            "Backups: what’s your setup?",
+            "Backups: what's your setup?",
             [
                 "3-2-1 backup (local + cloud + offsite)",
                 "Two copies (local + cloud OR local + external)",
@@ -515,8 +506,8 @@ def render_wedding_photographer_score():
         )
 
         sick_plan = st.radio(
-            "If you’re sick for a week in peak season…",
-            ["Yes — I have a contingency plan", "Kind of (I could figure it out)", "No"],
+            "If you're sick for a week in peak season…",
+            ["Yes, I have a contingency plan", "Kind of (I could figure it out)", "No"],
             index=1,
             key="wps_sick_plan",
         )
@@ -524,28 +515,28 @@ def render_wedding_photographer_score():
         st.markdown("### 🧾 Business Hygiene")
         contracts = st.radio(
             "Contracts + scope boundaries?",
-            ["Yes — contracts + clear scope", "Mostly (could be tighter)", "Not consistent", "No"],
+            ["Yes, contracts & clear scope", "Mostly (could be tighter)", "Not consistent", "No"],
             index=0,
             key="wps_contracts",
         )
 
         crm_system = st.radio(
             "Client workflow system (CRM/templates/process)?",
-            ["Yes (CRM / templates / process)", "Some templates, not fully systemized", "Mostly manual each time"],
+            ["Yes (CRM/templates/process)", "Some templates, not fully systemized", "Mostly manual each time"],
             index=1,
             key="wps_crm_system",
         )
 
         venue_notes = st.radio(
             "Do you keep venue/church notes (restrictions, best spots, rain plans)?",
-            ["Yes — I keep venue/church notes", "Sometimes", "No"],
+            ["Yes, I keep venue/church notes", "Sometimes", "No"],
             index=1,
             key="wps_venue_notes",
         )
 
         client_expectations = st.radio(
-            "Do you set clear expectations early (timeline + delivery + what’s realistic)?",
-            ["Very clear (timeline + delivery expectations set early)", "Usually clear", "Not consistent"],
+            "Do you set clear expectations early (timeline + delivery + what's realistic)?",
+            ["Very clear (timeline & delivery expectations set early)", "Usually clear", "Not consistent"],
             index=1,
             key="wps_client_expectations",
         )
