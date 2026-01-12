@@ -33,15 +33,15 @@ st.markdown(
 )
 
 PHOTO_OPS_TOOLS = [
-    "Timeline Builder",
-    "Sunset Time Checker",
-    "Editing Time Estimator",
-    "CODB Calculator",
-    "What's Your Wedding Photographer Score?",
+    "Builder: Timeline",
+    "Checker: Sunset",
+    "EEstimator: Editing Time",
+    "Calculator: CODB",
+    "For Fun: What's Your Wedding Photographer Score?",
 ]
 
 PERSONAL_TOOLS = [
-    "Personal Finance Dashboard",
+    "Dashboard: Personal Finance",
 ]
 
 
@@ -78,17 +78,17 @@ def main():
             tool = st.radio("Choose a tool", PERSONAL_TOOLS, index=0, key="sidebar_personal_tool")
 
     # Routing
-    if tool == "Timeline Builder":
+    if tool == "Builder: Timeline":
         render_timeline_builder()
-    elif tool == "Sunset Time Checker":
+    elif tool == "Checker: Sunset":
         render_sunset_checker()
-    elif tool == "Editing Time Estimator":
+    elif tool == "Estimator: Editing Time":
         render_post_processing_calculator()
-    elif tool == "CODB Calculator":
+    elif tool == "Calculator: CODB":
         render_wedding_codb_calculator()
-    elif tool == "What's Your Wedding Photographer Score?":
+    elif tool == "For Fun: What's Your Wedding Photographer Score?":
         render_wedding_photographer_score()
-    elif tool == "Personal Finance Dashboard":
+    elif tool == "Dashboard: Personal Finance":
         render_personal_finance_dashboard()
 
 
