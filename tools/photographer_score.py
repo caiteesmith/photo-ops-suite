@@ -38,14 +38,14 @@ def _clamp_0_100(x: float) -> int:
 
 def _band(total: int) -> Tuple[str, str]:
     if total >= 90:
-        return "Sustainable Pro", "You’ve got systems. You’ve got margins. You’ve got peace."
+        return "Sustainable Pro", "You've got systems. You've got margins. You've got peace."
     if total >= 80:
-        return "Dialed In", "Solid foundation — a few tweaks and you’re unstoppable."
+        return "Dialed In", "Solid foundation! A few tweaks and you're unstoppable."
     if total >= 70:
-        return "Solid, but Stretched", "You’re doing a lot right, but the margins/buffers might be thin."
+        return "Solid, but Stretched", "You're doing a lot right, but the margins/buffers might be thin."
     if total >= 55:
-        return "High Burnout Risk", "It’s working… but it’s probably costing you sleep."
-    return "Chaos Carry-On 🫠", "We’re one busy month away from “why did I do this to myself.”"
+        return "High Burnout Risk", "It's working... but it's probably costing you sleep."
+    return "Chaos Carry-On 🫠", "We're one busy month away from “why did I do this to myself.”"
 
 
 def _score_from_choice(choice: str, mapping: Dict[str, int], default: int = 0) -> int:
