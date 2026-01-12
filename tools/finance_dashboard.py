@@ -161,7 +161,7 @@ def render_personal_finance_dashboard():
     if "pf_liabilities_df" not in st.session_state:
         st.session_state["pf_liabilities_df"] = pd.DataFrame(DEFAULT_LIABILITIES)
 
-    assets_df = st.session_state["pf_liabilities_df"]
+    liabilities_df = st.session_state["pf_liabilities_df"]
 
     st.subheader("Monthly Cash Flow")
 
@@ -258,7 +258,7 @@ def render_personal_finance_dashboard():
         elif remaining < 200:
             st.warning("Very tight margin. This month has basically no buffer.")
         else:
-            st.success("Nice — you’ve got breathing room.")
+            st.success("Nice! You've got breathing room.")
 
     st.divider()
 
