@@ -409,21 +409,13 @@ def render_wedding_codb_calculator():
         current_price = float(inp.current_avg_price_per_wedding)
         recommended = float(res.recommended_price_per_wedding_with_profit)
         delta = recommended - current_price
-        delta_str = f"{'+' if delta >= 0 else '-'}{_money(abs(delta))}"
 
-        msg = (
-            f"**Recommended:** {_money(recommended)}  \n"
-            f"**Difference:** {delta_str} vs your current avg  \n"
-            f"**Margin:** {_pct(inp.target_profit_margin_pct)}"
+        st.metric(
+            label="Recommended price vs current avg",
+            value=_money(recommended),
+            delta=f"{'+' if delta >= 0 else '-'}{_money(abs(delta))}",
         )
-
-        if delta > 0:
-            st.warning(msg)
-        elif delta < 0:
-            st.success(msg)
-        else:
-            st.info(msg)
-
+        st.caption(f"Based on a target profit margin of {_pct(inp.target_profit_margin_pct)}.")
 
         if res.weddings_needed_to_hit_income_goal_at_current_price == float("inf"):
             st.warning(
