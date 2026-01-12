@@ -4,6 +4,7 @@ from tools.sunset_checker import render_sunset_checker
 from tools.post_processing_calculator import render_post_processing_calculator
 from tools.codb_calculator import render_wedding_codb_calculator
 from tools.photographer_score import render_wedding_photographer_score
+from tools.finance_dashboard import render_personal_finance_dashboard
 
 import streamlit as st
 
@@ -52,6 +53,15 @@ def main():
             ["Timeline Builder", "Sunset & Golden Hour", "Post-Processing Calculator", "CODB Calculator", "What's Your Wedding Photographer Score?"],
             index=0,
         )
+    
+        st.divider
+        st.sidebar.header("Personal Tools")
+        tool = st.sidebar.radio(
+            "Choose a tool",
+            ["Personal Finance Dashboard"],
+            index=0,
+        )
+
 
     if tool == "Timeline Builder":
         render_timeline_builder()
@@ -63,6 +73,8 @@ def main():
         render_wedding_codb_calculator()
     elif tool == "What's Your Wedding Photographer Score?":
         render_wedding_photographer_score()
+    elif tool == "Personal Finance Dashboard":
+        render_personal_finance_dashboard()
 
 if __name__ == "__main__":
     main()
