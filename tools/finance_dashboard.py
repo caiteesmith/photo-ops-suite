@@ -6,15 +6,15 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
+from io import BytesIO
 
 import pandas as pd
 import streamlit as st
 from openpyxl import load_workbook
 from openpyxl.worksheet.worksheet import Worksheet
 
-
 # -------------------------
-# Config (EDIT THESE ONCE)
+# Config
 # -------------------------
 @dataclass(frozen=True)
 class FinanceSheetConfig:
@@ -107,12 +107,10 @@ def _money(x: Optional[float]) -> str:
 # -------------------------
 # Core loader
 # -------------------------
+from io import BytesIO
+
 def load_finance_workbook(file_bytes: bytes, cfg: FinanceSheetConfig) -> Dict[str, Any]:
-    """
-    Loads workbook with data_only=True so we read the last-calculated values.
-    If the sheet hasn't been opened/saved in Excel recently, formula results may be None.
-    """
-    wb = load_workbook(filename=st.runtime.uploaded_file_manager.BytesIO(file_bytes), data_only=True)
+    wb = load_workbook(filename=BytesIO(file_bytes), data_only=True)
     if cfg.sheet_name not in wb.sheetnames:
         raise ValueError(f"Sheet '{cfg.sheet_name}' not found. Available: {wb.sheetnames}")
 
