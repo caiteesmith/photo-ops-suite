@@ -2,6 +2,7 @@ from __future__ import annotations
 from tools.timeline_builder_ui import render_timeline_builder
 from tools.sunset_checker import render_sunset_checker
 from tools.post_processing_calculator import render_post_processing_calculator
+from tools.codb_calculator import render_wedding_codb_calculator
 
 import streamlit as st
 
@@ -57,6 +58,8 @@ def main():
         render_sunset_checker()
     elif tool == "Post-Processing Calculator":
         render_post_processing_calculator()
+    elif tool == "CODB Calculator":
+        render_wedding_codb_calculator()
 
 if __name__ == "__main__":
     main()
