@@ -95,8 +95,7 @@ This tool helps photographers:
   - How many weddings are needed to hit income goals
 
 **Why does this matter?**  
-Many wedding photographers underprice not because of skill — but because they underestimate time, costs, and taxes.  
-This tool provides clarity, confidence, and data-backed pricing decisions.
+Many wedding photographers underprice not because of skill but because they underestimate time, costs, and taxes. This tool provides clarity, confidence, and data-backed pricing decisions.
 
 ## Design Philosophy
 Photo Ops Suite is built around a few core principles:
