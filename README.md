@@ -72,6 +72,32 @@ A workload estimation tool for photographers who want realistic editing expectat
 **Why does this matter?**  
 This supports sustainable workflows and clearer turnaround communication.
 
+### Wedding Cost of Doing Business (CODB) Calculator
+A wedding-specific pricing and sustainability tool designed to answer a critical question:
+
+> *“What do I actually need to charge per wedding to make this business sustainable?”*
+
+This tool helps photographers:
+
+- Calculate true cost per wedding, including:
+  - Annual fixed business expenses
+  - Average per-wedding variable costs
+  - Gear replacement and depreciation
+- Account for time spent per wedding, including:
+  - Pre-wedding communication and planning
+  - Wedding day coverage and travel
+  - Culling, editing, delivery, and follow-up
+- Model tax-aware take-home income, using an estimated effective tax rate
+- See:
+  - Break-even price per wedding
+  - Recommended pricing based on profit margin goals
+  - Effective hourly rate at current pricing
+  - How many weddings are needed to hit income goals
+
+**Why does this matter?**  
+Many wedding photographers underprice not because of skill — but because they underestimate time, costs, and taxes.  
+This tool provides clarity, confidence, and data-backed pricing decisions.
+
 ## Design Philosophy
 Photo Ops Suite is built around a few core principles:
 
