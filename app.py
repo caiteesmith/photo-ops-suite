@@ -7,7 +7,7 @@ from tools.sunset_checker import render_sunset_checker
 from tools.post_processing_calculator import render_post_processing_calculator
 from tools.codb_calculator import render_wedding_codb_calculator
 from tools.photographer_score import render_wedding_photographer_score
-from tools.finance_dashboard import render_finance_dashboard  # <-- use the real name
+from tools.finance_dashboard import render_personal_finance_dashboard
 
 st.set_page_config(
     page_title="Photo Ops Suite | Caitee Smith Photography",
@@ -89,7 +89,7 @@ def main():
     elif tool == "What's Your Wedding Photographer Score?":
         render_wedding_photographer_score()
     elif tool == "Personal Finance Dashboard":
-        render_finance_dashboard()
+        render_personal_finance_dashboard()
 
 
 if __name__ == "__main__":
