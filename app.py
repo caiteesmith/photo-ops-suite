@@ -35,7 +35,7 @@ st.markdown(
 PHOTO_OPS_TOOLS = [
     "Builder: Timeline",
     "Checker: Sunset",
-    "EEstimator: Editing Time",
+    "Estimator: Editing Time",
     "Calculator: CODB",
     "For Fun: What's Your Wedding Photographer Score?",
 ]
