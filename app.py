@@ -34,7 +34,7 @@ st.markdown(
 
 PHOTO_OPS_TOOLS = [
     "Timeline Builder",
-    "Sunset & Golden Hour",
+    "Sunset Time Checker",
     "Post-Processing Calculator",
     "CODB Calculator",
     "What's Your Wedding Photographer Score?",
