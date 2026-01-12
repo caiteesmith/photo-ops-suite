@@ -12,6 +12,109 @@ import streamlit as st
 
 
 # -------------------------
+# Stable option labels (single source of truth)
+# -------------------------
+CODB_OPTIONS = {
+    "done": "Yes, I've done a CODB calculation",
+    "rough": "Rough idea",
+    "no": "Nope",
+}
+
+HOURLY_OPTIONS = {
+    "yes": "Yes (I know my effective hourly rate)",
+    "kindof": "Kind of / I can estimate it",
+    "no": "No",
+}
+
+TAX_OPTIONS = {
+    "always": "I set aside taxes from every payment",
+    "sometimes": "I set aside sometimes / when I remember",
+    "wing": "I wing it (April surprise)",
+}
+
+BATCHING_OPTIONS = {
+    "yes": "Yes, I batch editing in focused blocks",
+    "sometimes": "Sometimes",
+    "no": "No, it's mostly squeezed in randomly",
+}
+
+OUTSOURCE_OPTIONS = {
+    "yes": "Yes (editing/admin help)",
+    "sometimes": "Occasionally",
+    "no": "No",
+}
+
+EDIT_SYSTEM_OPTIONS = {
+    "strong": "Strong system (presets, workflow, consistent steps)",
+    "some": "Some system, still evolving",
+    "chaos": "Chaos/depends on the job",
+}
+
+TURNAROUND_OPTIONS = {
+    "ontime": "Always early or on time",
+    "usually": "Usually on time (rarely late)",
+    "sometimes": "Sometimes late",
+    "often": "Often late",
+}
+
+BOUNDARIES_OPTIONS = {
+    "yes": "Yes, I protect at least 1 day off weekly",
+    "sometimes": "Sometimes",
+    "no": "Not really",
+}
+
+BUFFER_OPTIONS = {
+    "yes": "Yes, I build buffers into timelines + delivery",
+    "sometimes": "Sometimes",
+    "no": "No",
+}
+
+BACKUP_OPTIONS = {
+    "321": "3-2-1 backup (local + cloud + offsite)",
+    "two": "Two copies (local + cloud OR local + external)",
+    "one": "One backup (or inconsistent)",
+    "none": "No real backup system",
+}
+
+REDUNDANCY_OPTIONS = {
+    "yes": "Yes (backup camera body + essentials)",
+    "partial": "Partial (some redundancy)",
+    "no": "No",
+}
+
+SICK_OPTIONS = {
+    "yes": "Yes, I have a contingency plan",
+    "kindof": "Kind of (I could figure it out)",
+    "no": "No",
+}
+
+CONTRACT_OPTIONS = {
+    "yes": "Yes, contracts & clear scope",
+    "mostly": "Mostly (could be tighter)",
+    "inconsistent": "Not consistent",
+    "no": "No",
+}
+
+CRM_OPTIONS = {
+    "yes": "Yes (CRM/templates/process)",
+    "some": "Some templates, not fully systemized",
+    "manual": "Mostly manual each time",
+}
+
+VENUE_OPTIONS = {
+    "yes": "Yes, I keep venue/church notes",
+    "sometimes": "Sometimes",
+    "no": "No",
+}
+
+EXPECT_OPTIONS = {
+    "very": "Very clear (timeline & delivery expectations set early)",
+    "usually": "Usually clear",
+    "not": "Not consistent",
+}
+
+
+# -------------------------
 # Models
 # -------------------------
 @dataclass
@@ -67,28 +170,13 @@ def _weighted_total(b: Dict[str, int]) -> int:
     return _clamp_0_100(total)
 
 
-def _autofill_from_codb_if_available() -> Dict[str, float]:
-    """
-    OPTIONAL: If your CODB tool stores results in session_state, we can pull a couple signals.
-    This function is safe even if nothing exists.
-    """
-    out: Dict[str, float] = {}
-
-    # If you have something like st.session_state["codb_inputs"] or ["codb_results"], we can read it.
-    # We won't assume structure beyond common keys.
-    codb_inputs = st.session_state.get("codb_inputs")
-    codb_results = st.session_state.get("codb_results")  # you may not have this — totally ok
-
-    if isinstance(codb_inputs, dict):
-        # useful hints
-        out["current_price"] = float(codb_inputs.get("current_avg_price_per_wedding", 0) or 0)
-        out["tax_rate"] = float(codb_inputs.get("effective_tax_rate_pct", 0) or 0)
-        out["profit_margin_target"] = float(codb_inputs.get("target_profit_margin_pct", 0) or 0)
-
-    if isinstance(codb_results, dict):
-        out["effective_hourly"] = float(codb_results.get("effective_hourly_at_current_price", 0) or 0)
-        out["net_profit_per_wedding"] = float(codb_results.get("net_profit_per_wedding_at_current_price", 0) or 0)
-
+def _dedupe(items: List[str]) -> List[str]:
+    seen = set()
+    out: List[str] = []
+    for x in items:
+        if x not in seen:
+            out.append(x)
+            seen.add(x)
     return out
 
 
@@ -105,27 +193,27 @@ def compute_score(answers: Dict[str, object]) -> ScoreBreakdown:
     pricing += _score_from_choice(
         str(answers["codb_known"]),
         {
-            "Yes — I’ve done a CODB calculation": 40,
-            "Rough idea": 20,
-            "Nope": 0,
+            CODB_OPTIONS["done"]: 40,
+            CODB_OPTIONS["rough"]: 20,
+            CODB_OPTIONS["no"]: 0,
         },
     )
 
     pricing += _score_from_choice(
         str(answers["hourly_known"]),
         {
-            "Yes (I know my effective hourly rate)": 30,
-            "Kind of / I can estimate it": 15,
-            "No": 0,
+            HOURLY_OPTIONS["yes"]: 30,
+            HOURLY_OPTIONS["kindof"]: 15,
+            HOURLY_OPTIONS["no"]: 0,
         },
     )
 
     pricing += _score_from_choice(
         str(answers["tax_plan"]),
         {
-            "I set aside taxes from every payment": 30,
-            "I set aside sometimes / when I remember": 15,
-            "I wing it (April surprise)": 0,
+            TAX_OPTIONS["always"]: 30,
+            TAX_OPTIONS["sometimes"]: 15,
+            TAX_OPTIONS["wing"]: 0,
         },
     )
 
@@ -134,7 +222,6 @@ def compute_score(answers: Dict[str, object]) -> ScoreBreakdown:
     # --- Time & workflow (0-100) ---
     time_workflow = 0
 
-    # Editing hours per wedding (lower is not always better; we’re scoring predictability + intentionality)
     edit_hours = float(answers["editing_hours_per_wedding"])
     if edit_hours <= 10:
         time_workflow += 25
@@ -148,27 +235,27 @@ def compute_score(answers: Dict[str, object]) -> ScoreBreakdown:
     time_workflow += _score_from_choice(
         str(answers["batching"]),
         {
-            "Yes — I batch editing in focused blocks": 30,
-            "Sometimes": 15,
-            "No — it’s mostly squeezed in randomly": 0,
+            BATCHING_OPTIONS["yes"]: 30,
+            BATCHING_OPTIONS["sometimes"]: 15,
+            BATCHING_OPTIONS["no"]: 0,
         },
     )
 
     time_workflow += _score_from_choice(
         str(answers["outsourcing"]),
         {
-            "Yes (editing/admin help)": 25,
-            "Occasionally": 12,
-            "No": 0,
+            OUTSOURCE_OPTIONS["yes"]: 25,
+            OUTSOURCE_OPTIONS["sometimes"]: 12,
+            OUTSOURCE_OPTIONS["no"]: 0,
         },
     )
 
     time_workflow += _score_from_choice(
         str(answers["editing_system"]),
         {
-            "Strong system (presets, workflow, consistent steps)": 20,
-            "Some system, still evolving": 10,
-            "Chaos / depends on the job": 0,
+            EDIT_SYSTEM_OPTIONS["strong"]: 20,
+            EDIT_SYSTEM_OPTIONS["some"]: 10,
+            EDIT_SYSTEM_OPTIONS["chaos"]: 0,
         },
     )
 
@@ -177,14 +264,13 @@ def compute_score(answers: Dict[str, object]) -> ScoreBreakdown:
     # --- Delivery & capacity (0-100) ---
     delivery_capacity = 0
 
-    turnaround = str(answers["turnaround"])
     delivery_capacity += _score_from_choice(
-        turnaround,
+        str(answers["turnaround"]),
         {
-            "Always early or on time": 35,
-            "Usually on time (rarely late)": 25,
-            "Sometimes late": 12,
-            "Often late": 0,
+            TURNAROUND_OPTIONS["ontime"]: 35,
+            TURNAROUND_OPTIONS["usually"]: 25,
+            TURNAROUND_OPTIONS["sometimes"]: 12,
+            TURNAROUND_OPTIONS["often"]: 0,
         },
     )
 
@@ -201,18 +287,18 @@ def compute_score(answers: Dict[str, object]) -> ScoreBreakdown:
     delivery_capacity += _score_from_choice(
         str(answers["boundaries"]),
         {
-            "Yes — I protect at least 1 day off weekly": 25,
-            "Sometimes": 12,
-            "Not really": 0,
+            BOUNDARIES_OPTIONS["yes"]: 25,
+            BOUNDARIES_OPTIONS["sometimes"]: 12,
+            BOUNDARIES_OPTIONS["no"]: 0,
         },
     )
 
     delivery_capacity += _score_from_choice(
         str(answers["buffering"]),
         {
-            "Yes — I build buffers into timelines + delivery": 15,
-            "Sometimes": 8,
-            "No": 0,
+            BUFFER_OPTIONS["yes"]: 15,
+            BUFFER_OPTIONS["sometimes"]: 8,
+            BUFFER_OPTIONS["no"]: 0,
         },
     )
 
@@ -221,33 +307,31 @@ def compute_score(answers: Dict[str, object]) -> ScoreBreakdown:
     # --- Risk & resilience (0-100) ---
     risk_resilience = 0
 
-    backups = str(answers["backups"])
     risk_resilience += _score_from_choice(
-        backups,
+        str(answers["backups"]),
         {
-            "3-2-1 backup (local + cloud + offsite)": 45,
-            "Two copies (local + cloud OR local + external)": 30,
-            "One backup (or inconsistent)": 10,
-            "No real backup system": 0,
+            BACKUP_OPTIONS["321"]: 45,
+            BACKUP_OPTIONS["two"]: 30,
+            BACKUP_OPTIONS["one"]: 10,
+            BACKUP_OPTIONS["none"]: 0,
         },
     )
 
-    redundancy = str(answers["gear_redundancy"])
     risk_resilience += _score_from_choice(
-        redundancy,
+        str(answers["gear_redundancy"]),
         {
-            "Yes (backup camera body + essentials)": 30,
-            "Partial (some redundancy)": 15,
-            "No": 0,
+            REDUNDANCY_OPTIONS["yes"]: 30,
+            REDUNDANCY_OPTIONS["partial"]: 15,
+            REDUNDANCY_OPTIONS["no"]: 0,
         },
     )
 
     risk_resilience += _score_from_choice(
         str(answers["sick_plan"]),
         {
-            "Yes — I have a contingency plan": 25,
-            "Kind of (I could figure it out)": 12,
-            "No": 0,
+            SICK_OPTIONS["yes"]: 25,
+            SICK_OPTIONS["kindof"]: 12,
+            SICK_OPTIONS["no"]: 0,
         },
     )
 
@@ -259,37 +343,37 @@ def compute_score(answers: Dict[str, object]) -> ScoreBreakdown:
     business_hygiene += _score_from_choice(
         str(answers["contracts"]),
         {
-            "Yes — contracts + clear scope": 35,
-            "Mostly (could be tighter)": 20,
-            "Not consistent": 8,
-            "No": 0,
+            CONTRACT_OPTIONS["yes"]: 35,
+            CONTRACT_OPTIONS["mostly"]: 20,
+            CONTRACT_OPTIONS["inconsistent"]: 8,
+            CONTRACT_OPTIONS["no"]: 0,
         },
     )
 
     business_hygiene += _score_from_choice(
         str(answers["crm_system"]),
         {
-            "Yes (CRM / templates / process)": 30,
-            "Some templates, not fully systemized": 15,
-            "Mostly manual each time": 0,
+            CRM_OPTIONS["yes"]: 30,
+            CRM_OPTIONS["some"]: 15,
+            CRM_OPTIONS["manual"]: 0,
         },
     )
 
     business_hygiene += _score_from_choice(
         str(answers["venue_notes"]),
         {
-            "Yes — I keep venue/church notes": 20,
-            "Sometimes": 10,
-            "No": 0,
+            VENUE_OPTIONS["yes"]: 20,
+            VENUE_OPTIONS["sometimes"]: 10,
+            VENUE_OPTIONS["no"]: 0,
         },
     )
 
     business_hygiene += _score_from_choice(
         str(answers["client_expectations"]),
         {
-            "Very clear (timeline + delivery expectations set early)": 15,
-            "Usually clear": 8,
-            "Not consistent": 0,
+            EXPECT_OPTIONS["very"]: 15,
+            EXPECT_OPTIONS["usually"]: 8,
+            EXPECT_OPTIONS["not"]: 0,
         },
     )
 
@@ -302,14 +386,9 @@ def compute_score(answers: Dict[str, object]) -> ScoreBreakdown:
         "risk_resilience": risk_resilience,
         "business_hygiene": business_hygiene,
     }
+
     total = _weighted_total(breakdown)
     label, vibe = _band(total)
-
-    # Highlights / Fixes (rule-of-thumb)
-    # Pick top 2 highlights and top 2 fixes
-    sorted_items = sorted(breakdown.items(), key=lambda kv: kv[1], reverse=True)
-    top2 = sorted_items[:2]
-    bottom2 = sorted_items[-2:]
 
     nice_names = {
         "pricing": "Pricing & CODB",
@@ -318,6 +397,10 @@ def compute_score(answers: Dict[str, object]) -> ScoreBreakdown:
         "risk_resilience": "Risk & Resilience",
         "business_hygiene": "Business Hygiene",
     }
+
+    sorted_items = sorted(breakdown.items(), key=lambda kv: kv[1], reverse=True)
+    top2 = sorted_items[:2]
+    bottom2 = sorted_items[-2:]
 
     for k, v in top2:
         if v >= 70:
@@ -341,16 +424,6 @@ def compute_score(answers: Dict[str, object]) -> ScoreBreakdown:
     if time_workflow < 60:
         fixes.append("Batch editing into focused blocks (even 2x/week) to reduce context-switch cost.")
 
-    # De-dupe while preserving order
-    def dedupe(items: List[str]) -> List[str]:
-        seen = set()
-        out = []
-        for x in items:
-            if x not in seen:
-                out.append(x)
-                seen.add(x)
-        return out
-
     return ScoreBreakdown(
         pricing=pricing,
         time_workflow=time_workflow,
@@ -360,8 +433,8 @@ def compute_score(answers: Dict[str, object]) -> ScoreBreakdown:
         total=total,
         label=label,
         vibe=vibe,
-        highlights=dedupe(highlights),
-        fixes=dedupe(fixes)[:5],
+        highlights=_dedupe(highlights),
+        fixes=_dedupe(fixes)[:5],
     )
 
 
@@ -369,25 +442,13 @@ def compute_score(answers: Dict[str, object]) -> ScoreBreakdown:
 # UI
 # -------------------------
 def render_wedding_photographer_score():
-    st.title("🎯 What’s Your Wedding Photographer Score?")
+    st.title("🎯 What's Your Wedding Photographer Score?")
     st.caption(
         "Just for fun but based on real sustainability signals (pricing, workflow, delivery, risk). "
         "No judgment, just data."
     )
 
-    # --- Questions ---
     st.subheader("Answer honestly (this is for you)")
-
-    # Progress (we’ll increment as we go)
-    progress = 0
-    total_steps = 10
-
-    def bump():
-        nonlocal progress
-        progress += 1
-        st.progress(progress / total_steps)
-
-    st.progress(0.0)
 
     colL, colR = st.columns([1.0, 1.0], gap="large")
 
@@ -395,27 +456,24 @@ def render_wedding_photographer_score():
         st.markdown("### 💰 Pricing & Money")
         codb_known = st.radio(
             "Do you know your true cost per wedding (CODB)?",
-            ["Yes, I've done a CODB calculation", "Rough idea", "Nope"],
+            list(CODB_OPTIONS.values()),
             index=0,
             key="wps_codb_known",
         )
-        bump()
 
         hourly_known = st.radio(
             "Do you know your effective hourly rate (after time + costs)?",
-            ["Yes (I know my effective hourly rate)", "Kind of / I can estimate it", "No"],
+            list(HOURLY_OPTIONS.values()),
             index=1,
             key="wps_hourly_known",
         )
-        bump()
 
         tax_plan = st.radio(
             "Taxes: what's your plan?",
-            ["I set aside taxes from every payment", "I set aside sometimes / when I remember", "I wing it (April surprise)"],
+            list(TAX_OPTIONS.values()),
             index=1,
             key="wps_tax_plan",
         )
-        bump()
 
         st.markdown("### ⏱ Time & Workflow")
         editing_hours_per_wedding = st.slider(
@@ -426,41 +484,36 @@ def render_wedding_photographer_score():
             help="Include culling, editing, export, upload, & delivery admin if you want it to be more honest.",
             key="wps_editing_hours_per_wedding",
         )
-        bump()
 
         batching = st.radio(
             "Do you batch editing into focused blocks?",
-            ["Yes, I batch editing in focused blocks", "Sometimes", "No, it's mostly squeezed in randomly"],
+            list(BATCHING_OPTIONS.values()),
             index=1,
             key="wps_batching",
         )
-        bump()
 
         outsourcing = st.radio(
             "Do you outsource anything (editing/admin)?",
-            ["Yes (editing/admin help)", "Occasionally", "No"],
+            list(OUTSOURCE_OPTIONS.values()),
             index=2,
             key="wps_outsourcing",
         )
-        bump()
 
         editing_system = st.radio(
             "How would you describe your editing/workflow system?",
-            ["Strong system (presets, workflow, consistent steps)", "Some system, still evolving", "Chaos/depends on the job"],
+            list(EDIT_SYSTEM_OPTIONS.values()),
             index=1,
             key="wps_editing_system",
         )
-        bump()
 
     with colR:
         st.markdown("### 📆 Delivery & Capacity")
         turnaround = st.radio(
             "Are you delivering on time?",
-            ["Always early or on time", "Usually on time (rarely late)", "Sometimes late", "Often late"],
+            list(TURNAROUND_OPTIONS.values()),
             index=1,
             key="wps_turnaround",
         )
-        bump()
 
         weddings_per_year = st.slider(
             "How many weddings do you typically take per year?",
@@ -469,18 +522,17 @@ def render_wedding_photographer_score():
             value=20,
             key="wps_weddings_per_year",
         )
-        bump()
 
         boundaries = st.radio(
             "Do you protect recovery time?",
-            ["Yes, I protect at least 1 day off weekly", "Sometimes", "Not really"],
+            list(BOUNDARIES_OPTIONS.values()),
             index=1,
             key="wps_boundaries",
         )
 
         buffering = st.radio(
             "Do you build buffers into timelines and delivery expectations?",
-            ["Yes, I build buffers into timelines + delivery", "Sometimes", "No"],
+            list(BUFFER_OPTIONS.values()),
             index=1,
             key="wps_buffering",
         )
@@ -488,26 +540,21 @@ def render_wedding_photographer_score():
         st.markdown("### ⚠️ Risk & Resilience")
         backups = st.radio(
             "Backups: what's your setup?",
-            [
-                "3-2-1 backup (local + cloud + offsite)",
-                "Two copies (local + cloud OR local + external)",
-                "One backup (or inconsistent)",
-                "No real backup system",
-            ],
+            list(BACKUP_OPTIONS.values()),
             index=1,
             key="wps_backups",
         )
 
         gear_redundancy = st.radio(
             "Gear redundancy?",
-            ["Yes (backup camera body + essentials)", "Partial (some redundancy)", "No"],
+            list(REDUNDANCY_OPTIONS.values()),
             index=1,
             key="wps_gear_redundancy",
         )
 
         sick_plan = st.radio(
             "If you're sick for a week in peak season…",
-            ["Yes, I have a contingency plan", "Kind of (I could figure it out)", "No"],
+            list(SICK_OPTIONS.values()),
             index=1,
             key="wps_sick_plan",
         )
@@ -515,33 +562,32 @@ def render_wedding_photographer_score():
         st.markdown("### 🧾 Business Hygiene")
         contracts = st.radio(
             "Contracts + scope boundaries?",
-            ["Yes, contracts & clear scope", "Mostly (could be tighter)", "Not consistent", "No"],
+            list(CONTRACT_OPTIONS.values()),
             index=0,
             key="wps_contracts",
         )
 
         crm_system = st.radio(
             "Client workflow system (CRM/templates/process)?",
-            ["Yes (CRM/templates/process)", "Some templates, not fully systemized", "Mostly manual each time"],
+            list(CRM_OPTIONS.values()),
             index=1,
             key="wps_crm_system",
         )
 
         venue_notes = st.radio(
             "Do you keep venue/church notes (restrictions, best spots, rain plans)?",
-            ["Yes, I keep venue/church notes", "Sometimes", "No"],
+            list(VENUE_OPTIONS.values()),
             index=1,
             key="wps_venue_notes",
         )
 
         client_expectations = st.radio(
             "Do you set clear expectations early (timeline + delivery + what's realistic)?",
-            ["Very clear (timeline & delivery expectations set early)", "Usually clear", "Not consistent"],
+            list(EXPECT_OPTIONS.values()),
             index=1,
             key="wps_client_expectations",
         )
 
-    # --- Compute ---
     st.divider()
 
     answers = {
@@ -575,7 +621,6 @@ def render_wedding_photographer_score():
         st.caption(f"**{result.label}** — {result.vibe}")
 
     with mid:
-        # Make the breakdown feel “game-like”
         st.write("**Category breakdown**")
         df = pd.DataFrame(
             {
@@ -606,23 +651,17 @@ def render_wedding_photographer_score():
         for f in result.fixes:
             st.write(f"🛠️ {f}")
 
-    # Simple chart (Streamlit-native)
-    st.bar_chart(
-        df.set_index("Category")["Score"],
-        use_container_width=True,
-    )
+    st.bar_chart(df.set_index("Category")["Score"], use_container_width=True)
 
-    # Shareable summary
     st.subheader("Shareable summary (copy/paste)")
     share_text = (
         f"My Wedding Photographer Score: {result.total}/100 — {result.label}\n"
-        f"Top strengths: {', '.join([h.replace('**','') for h in result.highlights[:2]])}\n"
-        f"Next fixes: {', '.join([f.replace('**','') for f in result.fixes[:2]])}\n"
+        f"Top strengths: {', '.join([h.replace('**', '') for h in result.highlights[:2]])}\n"
+        f"Next fixes: {', '.join([f.replace('**', '') for f in result.fixes[:2]])}\n"
         f"Generated: {datetime.now().strftime('%Y-%m-%d')}"
     )
     st.code(share_text, language="text")
 
-    # Export
     payload = {
         "generated_at": datetime.now().isoformat(timespec="seconds"),
         "answers": answers,
@@ -638,7 +677,6 @@ def render_wedding_photographer_score():
     )
 
 
-# If you want to run this file directly for quick testing:
 if __name__ == "__main__":
     st.set_page_config(page_title="What's Your Wedding Photographer Score?", layout="wide")
     render_wedding_photographer_score()
