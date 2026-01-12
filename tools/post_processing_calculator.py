@@ -3,7 +3,7 @@ import streamlit as st
 from math import ceil
 
 def render_post_processing_calculator():
-    st.subheader("Post-Processing Calculator")
+    st.subheader("Editing Time Estimator")
 
     st.markdown(
         """
