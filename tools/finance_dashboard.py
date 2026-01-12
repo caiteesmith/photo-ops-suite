@@ -51,6 +51,8 @@ def _download_json_button(label: str, payload: Dict, filename: str):
 def _download_csv_button(label: str, df: pd.DataFrame, filename: str):
     st.download_button(label, data=df.to_csv(index=False), file_name=filename, mime="text/csv", use_container_width=True)
 
+def _weekly_from_monthly(monthly: float) -> float:
+    return monthly / 4.33
 
 # -------------------------
 # Defaults (feel free to tweak)
@@ -62,18 +64,18 @@ DEFAULT_INCOME = [
 DEFAULT_FIXED = [
     {"Expense": "Mortgage/Rent", "Monthly Amount": 0.0, "Notes": ""},
     {"Expense": "Car payment", "Monthly Amount": 0.0, "Notes": ""},
-    {"Expense": "Insurance", "Monthly Amount": 0.0, "Notes": ""},
+    {"Expense": "Car nsurance", "Monthly Amount": 0.0, "Notes": ""},
     {"Expense": "Phone", "Monthly Amount": 0.0, "Notes": ""},
     {"Expense": "Internet", "Monthly Amount": 0.0, "Notes": ""},
 ]
 DEFAULT_VARIABLE = [
     {"Expense": "Groceries", "Monthly Amount": 0.0, "Notes": ""},
     {"Expense": "Gas/Transit", "Monthly Amount": 0.0, "Notes": ""},
-    {"Expense": "Eating out", "Monthly Amount": 0.0, "Notes": ""},
+    {"Expense": "Dining out", "Monthly Amount": 0.0, "Notes": ""},
     {"Expense": "Subscriptions", "Monthly Amount": 0.0, "Notes": ""},
 ]
 DEFAULT_SAVING = [
-    {"Bucket": "Roth IRA", "Monthly Amount": 0.0, "Notes": ""},
+    {"Bucket": "401k/Roth IRA", "Monthly Amount": 0.0, "Notes": ""},
     {"Bucket": "Brokerage", "Monthly Amount": 0.0, "Notes": ""},
     {"Bucket": "Emergency fund", "Monthly Amount": 0.0, "Notes": ""},
 ]
@@ -84,7 +86,7 @@ DEFAULT_ASSETS = [
     {"Asset": "Checking", "Value": 0.0, "Notes": ""},
     {"Asset": "Savings", "Value": 0.0, "Notes": ""},
     {"Asset": "Brokerage", "Value": 0.0, "Notes": ""},
-    {"Asset": "Roth IRA", "Value": 0.0, "Notes": ""},
+    {"Asset": "401k/Roth IRA", "Value": 0.0, "Notes": ""},
 ]
 DEFAULT_LIABILITIES = [
     {"Liability": "Mortgage", "Value": 0.0, "Notes": ""},
@@ -126,13 +128,40 @@ def render_personal_finance_dashboard():
             )
 
     # ---- Tables ----
-    income_df = _ensure_df("pf_income_df", DEFAULT_INCOME)
-    fixed_df = _ensure_df("pf_fixed_df", DEFAULT_FIXED)
-    variable_df = _ensure_df("pf_variable_df", DEFAULT_VARIABLE)
-    saving_df = _ensure_df("pf_saving_df", DEFAULT_SAVING)
-    debt_df = _ensure_df("pf_debt_df", DEFAULT_DEBT)
-    assets_df = _ensure_df("pf_assets_df", DEFAULT_ASSETS)
-    liabilities_df = _ensure_df("pf_liabilities_df", DEFAULT_LIABILITIES)
+    if "pf_income_df" not in st.session_state:
+        st.session_state["pf_income_df"] = pd.DataFrame(DEFAULT_INCOME)
+
+    income_df = st.session_state["pf_income_df"]
+
+    if "pf_fixed_df" not in st.session_state:
+        st.session_state["pf_fixed_df"] = pd.DataFrame(DEFAULT_FIXED)
+
+    fixed_df = st.session_state["pf_fixed_df"]
+
+    if "pf_variable_df" not in st.session_state:
+        st.session_state["pf_variable_df"] = pd.DataFrame(DEFAULT_VARIABLE)
+
+    variable_df = st.session_state["pf_variable_df"]
+
+    if "pf_saving_df" not in st.session_state:
+        st.session_state["pf_saving_df"] = pd.DataFrame(DEFAULT_SAVING)
+
+    saving_df = st.session_state["pf_saving_df"]
+
+    if "pf_debt_df" not in st.session_state:
+        st.session_state["pf_debt_df"] = pd.DataFrame(DEFAULT_DEBT)
+
+    debt_df = st.session_state["pf_debt_df"]
+
+    if "pf_assets_df" not in st.session_state:
+        st.session_state["pf_assets_df"] = pd.DataFrame(DEFAULT_ASSETS)
+
+    assets_df = st.session_state["pf_assets_df"]
+
+    if "pf_liabilities_df" not in st.session_state:
+        st.session_state["pf_liabilities_df"] = pd.DataFrame(DEFAULT_LIABILITIES)
+
+    assets_df = st.session_state["pf_liabilities_df"]
 
     st.subheader("Monthly Cash Flow")
 
@@ -155,7 +184,7 @@ def render_personal_finance_dashboard():
             st.session_state["pf_income_df"] = income_df
 
         with tab_exp:
-            st.write("Split your expenses into fixed + variable so you can see what's flexible.")
+            st.write("Split your expenses into fixed & variable so you can see what's flexible.")
             st.markdown("**Fixed Expenses**")
             fixed_df = st.data_editor(
                 fixed_df,
@@ -219,6 +248,10 @@ def render_personal_finance_dashboard():
         st.caption(f"Fixed: {_money(fixed_total)} • Variable: {_money(variable_total)}")
         st.metric("Saving / Investing (monthly)", _money(saving_total))
         st.metric("Left Over (monthly)", _money(remaining))
+        safe_weekly = remaining / 4.33
+        st.metric("Safe-to-spend (weekly)", _money(safe_weekly), help="Left over divided by ~4.33 weeks per month.")
+        safe_daily = remaining / 30.4
+        st.metric("Safe-to-spend (daily)", _money(safe_daily), help="Left over divided by ~30.4 days per month.")
 
         if remaining < 0:
             st.error("You're allocating more than you're bringing in (for this month).")
@@ -273,7 +306,7 @@ def render_personal_finance_dashboard():
 
     # ---- Debt info (optional, extra nerdy) ----
     st.subheader("Debt Details (optional)")
-    st.caption("This doesn’t affect net worth beyond the liability values — it’s here for clarity and planning.")
+    st.caption("This doesn't affect net worth beyond the liability values — it's here for clarity and planning.")
 
     debt_df = st.data_editor(
         debt_df,
@@ -312,6 +345,8 @@ def render_personal_finance_dashboard():
             "total_expenses": float(expenses_total),
             "saving_investing": float(saving_total),
             "left_over": float(remaining),
+            "safe_to_spend_weekly": float(safe_weekly),
+            "safe_to_spend_daily": float(safe_daily),
         },
         "net_worth": {
             "assets_total": float(total_assets),
