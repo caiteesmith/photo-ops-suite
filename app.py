@@ -3,6 +3,7 @@ from tools.timeline_builder_ui import render_timeline_builder
 from tools.sunset_checker import render_sunset_checker
 from tools.post_processing_calculator import render_post_processing_calculator
 from tools.codb_calculator import render_wedding_codb_calculator
+from tools.photographer_score import render_wedding_photographer_score
 
 import streamlit as st
 
@@ -48,7 +49,7 @@ def main():
         st.sidebar.header("Photo Ops Suite")
         tool = st.sidebar.radio(
             "Choose a tool",
-            ["Timeline Builder", "Sunset & Golden Hour", "Post-Processing Calculator", "CODB Calculator"],
+            ["Timeline Builder", "Sunset & Golden Hour", "Post-Processing Calculator", "CODB Calculator", "What's Your Wedding Photographer Score?"],
             index=0,
         )
 
@@ -60,6 +61,8 @@ def main():
         render_post_processing_calculator()
     elif tool == "CODB Calculator":
         render_wedding_codb_calculator()
+    elif tool == "What's Your Wedding Photographer Score?":
+        render_wedding_photographer_score()
 
 if __name__ == "__main__":
     main()
