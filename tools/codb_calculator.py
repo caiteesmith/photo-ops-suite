@@ -264,10 +264,10 @@ def render_wedding_codb_calculator():
     with st.expander("How to use this", expanded=False):
         st.markdown(
             """
-            1) Enter your annual fixed costs (subscriptions, insurance, marketing baseline, gear replacement, etc.).  
-            2) Enter your average variable costs per wedding (second shooter, travel, meals, etc.).  
-            3) Enter your hours per wedding (include *everything* from inquiry to delivery).  
-            4) Set your income goal and desired profit margin, then compare against your **current average price**.  
+            1. Enter your annual fixed costs (subscriptions, insurance, marketing baseline, gear replacement, etc.).  
+            2. Enter your average variable costs per wedding (second shooter, travel, meals, etc.).  
+            3. Enter your hours per wedding (include *everything* from inquiry to delivery).  
+            4. Set your income goal and desired profit margin, then compare against your **current average price**.  
             """.strip()
         )
 
