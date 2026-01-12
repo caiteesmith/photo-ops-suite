@@ -326,7 +326,8 @@ def render_wedding_codb_calculator():
                 min_value=0.0,
                 value=float(d.get("target_take_home_income_annual", 70000)),
                 step=1000.0,
-                help="Your goal after taxes (roughly). The calculator will gross this up using the estimated tax rate."
+                help="Your goal after taxes (roughly). The calculator will gross this up using the estimated tax rate.",
+                key="codb_target_take_home_income_annual",
             )
 
             d["effective_tax_rate_pct"] = st.slider(
@@ -334,25 +335,24 @@ def render_wedding_codb_calculator():
                 min_value=10,
                 max_value=45,
                 value=int(d.get("effective_tax_rate_pct", 30)),
-                help="Rough blended rate (federal + state + self-employment). Estimate only."
+                help="Rough blended rate (federal + state + self-employment). Estimate only.",
+                key="codb_effective_tax_rate_pct",
             )
 
             d["target_profit_margin_pct"] = st.slider(
                 "Target profit margin (%)",
                 min_value=0,
                 max_value=60,
-                value=int(d["target_profit_margin_pct"])
+                value=int(d.get("target_profit_margin_pct", 20)),
+                key="codb_target_profit_margin_pct",
             )
 
             d["current_avg_price_per_wedding"] = st.number_input(
                 "Current average price per wedding",
                 min_value=0.0,
-                value=float(d["current_avg_price_per_wedding"]),
-                step=100.0
-            )
-            d["target_profit_margin_pct"] = st.slider("Target profit margin (%)", min_value=0, max_value=60, value=int(d["target_profit_margin_pct"]))
-            d["current_avg_price_per_wedding"] = st.number_input(
-                "Current average price per wedding", min_value=0.0, value=float(d["current_avg_price_per_wedding"]), step=100.0
+                value=float(d.get("current_avg_price_per_wedding", 4500)),
+                step=100.0,
+                key="codb_current_avg_price_per_wedding",
             )
 
         c1, c2 = st.columns(2)
