@@ -35,7 +35,7 @@ st.markdown(
 PHOTO_OPS_TOOLS = [
     "Timeline Builder",
     "Sunset Time Checker",
-    "Post-Processing Calculator",
+    "Editing Time Estimator",
     "CODB Calculator",
     "What's Your Wedding Photographer Score?",
 ]
@@ -82,7 +82,7 @@ def main():
         render_timeline_builder()
     elif tool == "Sunset Time Checker":
         render_sunset_checker()
-    elif tool == "Post-Processing Calculator":
+    elif tool == "Editing Time Estimator":
         render_post_processing_calculator()
     elif tool == "CODB Calculator":
         render_wedding_codb_calculator()

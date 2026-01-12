@@ -58,7 +58,7 @@ This makes it easy to plan sunset portraits, advise couples on timing, and prote
 
 ![Screenshot of Sunset Checker](assets/photo-ops-suite-sunset.png)
 
-### Post-Processing Time Calculator
+### Editing Time Estimator
 A workload estimation tool for photographers who want realistic editing expectations.
 - Estimate editing time based on:
   - Number of delivered images
@@ -74,7 +74,7 @@ A workload estimation tool for photographers who want realistic editing expectat
 **Why does this matter?**  
 This supports sustainable workflows and clearer turnaround communication.
 
-![Screenshot of Post-Processing Time Calculator](assets/photo-ops-suite-postprocess.png)
+![Screenshot of Editing Time Estimator](assets/photo-ops-suite-postprocess.png)
 
 ### Wedding Cost of Doing Business (CODB) Calculator
 A wedding-specific pricing and sustainability tool designed to answer a critical question:
