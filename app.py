@@ -80,7 +80,7 @@ def main():
     # Routing
     if tool == "Timeline Builder":
         render_timeline_builder()
-    elif tool == "Sunset & Golden Hour":
+    elif tool == "Sunset Time Checker":
         render_sunset_checker()
     elif tool == "Post-Processing Calculator":
         render_post_processing_calculator()
