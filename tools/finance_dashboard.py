@@ -9,7 +9,7 @@ from typing import Dict, List, Optional
 
 import pandas as pd
 import streamlit as st
-
+import re
 
 # -------------------------
 # Helpers
@@ -54,25 +54,46 @@ def _download_csv_button(label: str, df: pd.DataFrame, filename: str):
 def _weekly_from_monthly(monthly: float) -> float:
     return monthly / 4.33
 
+def _norm(s: object) -> str:
+    return re.sub(r"\s+", " ", str(s or "").strip().lower())
+
+def _sum_by_keywords(df: pd.DataFrame, name_col: str, amount_col: str, keywords: List[str]) -> float:
+    if df is None or df.empty or name_col not in df.columns or amount_col not in df.columns:
+        return 0.0
+
+    keys = [k.lower() for k in keywords]
+    total = 0.0
+    for _, row in df.iterrows():
+        name = _norm(row.get(name_col))
+        amt = pd.to_numeric(row.get(amount_col), errors="coerce")
+        if pd.isna(amt):
+            amt = 0.0
+        if any(k in name for k in keys):
+            total += float(amt)
+    return float(total)
+
 # -------------------------
-# Defaults (feel free to tweak)
+# Defaults
 # -------------------------
 DEFAULT_INCOME = [
-    {"Source": "Paycheck 1", "Monthly Amount": 0.0, "Notes": ""},
-    {"Source": "Paycheck 2", "Monthly Amount": 0.0, "Notes": ""},
+    {"Source": "Paycheck (Net)", "Monthly Amount": 0.0, "Notes": ""}
 ]
 DEFAULT_FIXED = [
     {"Expense": "Mortgage/Rent", "Monthly Amount": 0.0, "Notes": ""},
     {"Expense": "Car payment", "Monthly Amount": 0.0, "Notes": ""},
-    {"Expense": "Car nsurance", "Monthly Amount": 0.0, "Notes": ""},
+    {"Expense": "Car insurance", "Monthly Amount": 0.0, "Notes": ""},
     {"Expense": "Phone", "Monthly Amount": 0.0, "Notes": ""},
     {"Expense": "Internet", "Monthly Amount": 0.0, "Notes": ""},
 ]
 DEFAULT_VARIABLE = [
+    {"Expense": "Utilities", "Monthly Amount": 0.0, "Notes": ""},
     {"Expense": "Groceries", "Monthly Amount": 0.0, "Notes": ""},
     {"Expense": "Gas/Transit", "Monthly Amount": 0.0, "Notes": ""},
     {"Expense": "Dining out", "Monthly Amount": 0.0, "Notes": ""},
     {"Expense": "Subscriptions", "Monthly Amount": 0.0, "Notes": ""},
+    {"Expense": "TP Fund", "Monthly Amount": 0.0, "Notes": ""},
+    {"Expense": "Pet Expenses", "Monthly Amount": 0.0, "Notes": ""},
+    {"Expense": "Other", "Monthly Amount": 0.0, "Notes": ""},
 ]
 DEFAULT_SAVING = [
     {"Bucket": "Retirement", "Monthly Amount": 0.0, "Notes": ""},
@@ -92,7 +113,6 @@ DEFAULT_LIABILITIES = [
     {"Liability": "Mortgage", "Value": 0.0, "Notes": ""},
     {"Liability": "Car loan", "Value": 0.0, "Notes": ""},
 ]
-
 
 # -------------------------
 # Main UI
@@ -239,6 +259,37 @@ def render_personal_finance_dashboard():
 
     remaining = net_income - expenses_total - saving_total
 
+    # ---- Emergency Minimum (assumption-based) ----
+    # All fixed expenses + essential variable categories + debt minimum payments
+    ESSENTIAL_VARIABLE_KEYWORDS = [
+        # groceries / food at home
+        "grocery", "groceries",
+
+        # utilities
+        "electric", "electricity", "gas", "water", "sewer", "trash", "garbage",
+        "utility", "utilities",
+
+        # comms
+        "internet", "wifi", "phone", "cell",
+
+        # insurance + health (common essentials)
+        "insurance", "medical", "health", "prescription", "rx",
+
+        # transportation essentials
+        "gasoline", "fuel", "transit", "train", "toll", "parking",
+    ]
+
+    essential_variable = _sum_by_keywords(
+        variable_df,
+        name_col="Expense",
+        amount_col="Monthly Amount",
+        keywords=ESSENTIAL_VARIABLE_KEYWORDS,
+    )
+
+    debt_minimums = _sum_df(debt_df, "Monthly Payment")
+
+    emergency_minimum_monthly = fixed_total + essential_variable + debt_minimums
+
     with right:
         st.markdown("#### Summary")
         st.metric("Net Income (monthly)", _money(net_income), help="If you selected gross income, this is estimated after tax.")
@@ -258,6 +309,23 @@ def render_personal_finance_dashboard():
             st.warning("Very tight margin. This month has basically no buffer.")
         else:
             st.success("Nice! You've got breathing room.")
+
+    st.divider()
+    st.subheader("🆘 Emergency Minimum (Assumption-Based)")
+    st.caption(
+        "Estimated minimum monthly amount needed if income stops: "
+        "Fixed expenses + utilities/groceries + debt minimum payments (auto-detected by name)."
+    )
+
+    e1, e2, e3, e4 = st.columns(4, gap="large")
+    e1.metric("Emergency Minimum (monthly)", _money(emergency_minimum_monthly))
+    e2.metric("3 months", _money(emergency_minimum_monthly * 3))
+    e3.metric("6 months", _money(emergency_minimum_monthly * 6))
+    e4.metric("12 months", _money(emergency_minimum_monthly * 12))
+
+    st.caption(
+        f"Includes: Fixed {_money(fixed_total)} + Essential variable {_money(essential_variable)} + Debt minimums {_money(debt_minimums)}"
+    )
 
     st.divider()
 
@@ -360,6 +428,13 @@ def render_personal_finance_dashboard():
             "assets": assets_df.to_dict(orient="records"),
             "liabilities": liabilities_df.to_dict(orient="records"),
             "debt_details": debt_df.to_dict(orient="records"),
+        },
+        "emergency_minimum": {
+            "monthly": float(emergency_minimum_monthly),
+            "fixed_included": float(fixed_total),
+            "essential_variable_included": float(essential_variable),
+            "debt_minimums_included": float(debt_minimums),
+            "keywords_used": ESSENTIAL_VARIABLE_KEYWORDS,
         },
     }
 
