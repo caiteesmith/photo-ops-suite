@@ -5,8 +5,6 @@ It’s designed to help photographers create realistic timelines, plan around su
 
 Built with Python and Streamlit, Photo Ops Suite focuses on clarity, speed, and photographer-aware planning rather than rigid schedules or generic event tools.
 
-![Screenshot of Timeline Builder](assets/photo-ops-suite.webp)
-
 ## ✨ Why Photo Ops Suite Exists
 Wedding photographers constantly juggle:
 - Coverage limits  
@@ -40,6 +38,8 @@ A comprehensive timeline planning tool that helps photographers:
 **Why does this matter?**  
 This helps photographers plan confidently, set realistic expectations with couples and planners, and avoid over-promising coverage.
 
+![Screenshot of Timeline Builder](assets/photo-ops-suite-timeline.png)
+
 ### Sunset, Golden Hour & Blue Hour Checker
 A location-aware sunset planning tool designed with wedding days in mind.
 
@@ -56,6 +56,8 @@ A location-aware sunset planning tool designed with wedding days in mind.
 **Why does this matter?**  
 This makes it easy to plan sunset portraits, advise couples on timing, and protect golden hour without guesswork.
 
+![Screenshot of Sunset Checker](assets/photo-ops-suite-sunset.png)
+
 ### Post-Processing Time Calculator
 A workload estimation tool for photographers who want realistic editing expectations.
 - Estimate editing time based on:
@@ -71,6 +73,8 @@ A workload estimation tool for photographers who want realistic editing expectat
 
 **Why does this matter?**  
 This supports sustainable workflows and clearer turnaround communication.
+
+![Screenshot of Post-Processing Time Calculator](assets/photo-ops-suite-postprocess.png)
 
 ### Wedding Cost of Doing Business (CODB) Calculator
 A wedding-specific pricing and sustainability tool designed to answer a critical question:
@@ -96,6 +100,8 @@ This tool helps photographers:
 
 **Why does this matter?**  
 Many wedding photographers underprice not because of skill but because they underestimate time, costs, and taxes. This tool provides clarity, confidence, and data-backed pricing decisions.
+
+![Screenshot of CODB Calculator](assets/photo-ops-suite-codb.webp)
 
 ## Design Philosophy
 Photo Ops Suite is built around a few core principles:
