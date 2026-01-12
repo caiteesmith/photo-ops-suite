@@ -56,10 +56,13 @@ class WeddingCODBInputs:
     blogging_vendor_hours: float
 
     # Income & pricing inputs
-    target_personal_income_annual: float
+    # Interpreted as *take-home* (after tax) in the UI/calcs below
+    target_take_home_income_annual: float
+    # Simple effective rate (federal + state + self-employment blended)
+    effective_tax_rate_pct: float
     target_profit_margin_pct: float  # e.g. 20 = 20%
     current_avg_price_per_wedding: float
-
+    effective_tax_rate_pct: float  # e.g. 25–35%
 
 @dataclass
 class WeddingCODBResults:
@@ -149,9 +152,15 @@ def compute_results(inp: WeddingCODBInputs) -> WeddingCODBResults:
         + _clamp_nonneg(inp.blogging_vendor_hours)
     )
 
-    # Income allocation per wedding (what you want to pay yourself)
-    income_per_wedding = _clamp_nonneg(inp.target_personal_income_annual) / weddings
+    # Income allocation per wedding (gross-up take-home for taxes)
+    tax_rate = max(0.0, min(0.9, float(inp.effective_tax_rate_pct) / 100.0))
+    target_take_home = _clamp_nonneg(inp.target_take_home_income_annual)
 
+    required_pre_tax_income = (
+        target_take_home / (1.0 - tax_rate) if tax_rate < 1.0 else target_take_home
+    )
+
+    income_per_wedding = required_pre_tax_income / weddings
     break_even_no_profit = true_cost + income_per_wedding
 
     profit_pct = max(0.0, min(95.0, float(inp.target_profit_margin_pct)))  # keep sane
@@ -168,7 +177,7 @@ def compute_results(inp: WeddingCODBInputs) -> WeddingCODBResults:
     # Weddings needed to hit income goal using net profit (after fixed allocation)
     # If net per wedding is <= 0, then you effectively can't hit it with that price.
     if net_profit_current > 0:
-        weddings_needed = _clamp_nonneg(inp.target_personal_income_annual) / net_profit_current
+        weddings_needed = required_pre_tax_income / net_profit_current
     else:
         weddings_needed = float("inf")
 
@@ -222,7 +231,8 @@ def _defaults() -> WeddingCODBInputs:
         export_upload_hours=1.5,
         delivery_admin_hours=1.0,
         blogging_vendor_hours=1.0,
-        target_personal_income_annual=70000,
+        target_take_home_income_annual=70000,
+        effective_tax_rate_pct=30,
         target_profit_margin_pct=20,
         current_avg_price_per_wedding=4500,
     )
@@ -230,6 +240,13 @@ def _defaults() -> WeddingCODBInputs:
 
 def _ensure_state():
     st.session_state.setdefault("codb_inputs", asdict(_defaults()))
+    d = st.session_state["codb_inputs"]
+    if "target_personal_income_annual" in d and "target_take_home_income_annual" not in d:
+        d["target_take_home_income_annual"] = d.pop("target_personal_income_annual")
+    if "effective_tax_rate_pct" not in d:
+        d["effective_tax_rate_pct"] = 30
+    st.session_state["codb_inputs"] = d
+
     st.session_state.setdefault("codb_last_saved", None)
 
 
@@ -247,10 +264,10 @@ def render_wedding_codb_calculator():
     with st.expander("How to use this", expanded=False):
         st.markdown(
             """
-            1) Enter your **annual fixed costs** (subscriptions, insurance, marketing baseline, gear replacement, etc.).  
-            2) Enter your **average variable costs per wedding** (second shooter, travel, meals, etc.).  
-            3) Enter your **hours per wedding** (include *everything* from inquiry to delivery).  
-            4) Set your **income goal** and desired **profit margin**, then compare against your **current average price**.  
+            1) Enter your annual fixed costs (subscriptions, insurance, marketing baseline, gear replacement, etc.).  
+            2) Enter your average variable costs per wedding (second shooter, travel, meals, etc.).  
+            3) Enter your hours per wedding (include *everything* from inquiry to delivery).  
+            4) Set your income goal and desired profit margin, then compare against your **current average price**.  
             """.strip()
         )
 
@@ -264,16 +281,16 @@ def render_wedding_codb_calculator():
         d = dict(st.session_state["codb_inputs"])
 
         with st.expander("Annual fixed costs", expanded=True):
-            d["insurance_annual"] = st.number_input("Insurance (annual)", min_value=0.0, value=float(d["insurance_annual"]), step=50.0)
-            d["software_annual"] = st.number_input("Software stack (annual)", min_value=0.0, value=float(d["software_annual"]), step=50.0)
-            d["website_annual"] = st.number_input("Website + domain (annual)", min_value=0.0, value=float(d["website_annual"]), step=25.0)
-            d["accounting_legal_annual"] = st.number_input("Accounting + legal (annual)", min_value=0.0, value=float(d["accounting_legal_annual"]), step=50.0)
-            d["education_annual"] = st.number_input("Education (annual)", min_value=0.0, value=float(d["education_annual"]), step=50.0)
-            d["marketing_annual"] = st.number_input("Marketing baseline (annual)", min_value=0.0, value=float(d["marketing_annual"]), step=50.0)
-            d["office_annual"] = st.number_input("Office / home office (annual)", min_value=0.0, value=float(d["office_annual"]), step=50.0)
-            d["other_fixed_annual"] = st.number_input("Other fixed costs (annual)", min_value=0.0, value=float(d["other_fixed_annual"]), step=50.0)
+            d["insurance_annual"] = st.number_input("Insurance", min_value=0.0, value=float(d["insurance_annual"]), step=50.0)
+            d["software_annual"] = st.number_input("Software stack", min_value=0.0, value=float(d["software_annual"]), step=50.0)
+            d["website_annual"] = st.number_input("Website & domain", min_value=0.0, value=float(d["website_annual"]), step=25.0)
+            d["accounting_legal_annual"] = st.number_input("Accounting & legal", min_value=0.0, value=float(d["accounting_legal_annual"]), step=50.0)
+            d["education_annual"] = st.number_input("Education", min_value=0.0, value=float(d["education_annual"]), step=50.0)
+            d["marketing_annual"] = st.number_input("Marketing baseline", min_value=0.0, value=float(d["marketing_annual"]), step=50.0)
+            d["office_annual"] = st.number_input("Office/home office", min_value=0.0, value=float(d["office_annual"]), step=50.0)
+            d["other_fixed_annual"] = st.number_input("Other fixed costs", min_value=0.0, value=float(d["other_fixed_annual"]), step=50.0)
             d["gear_replacement_annual"] = st.number_input(
-                "Gear replacement / depreciation (annualized)", min_value=0.0, value=float(d["gear_replacement_annual"]), step=100.0,
+                "Gear replacement/depreciation", min_value=0.0, value=float(d["gear_replacement_annual"]), step=100.0,
                 help="Think: how much you should set aside yearly to replace bodies/lenses over time."
             )
 
@@ -281,15 +298,15 @@ def render_wedding_codb_calculator():
             d["weddings_per_year"] = st.number_input("Weddings per year", min_value=1, value=int(d["weddings_per_year"]), step=1)
 
         with st.expander("Variable costs per wedding (averages)", expanded=False):
-            d["second_shooter_per_wedding"] = st.number_input("Second shooter (per wedding)", min_value=0.0, value=float(d["second_shooter_per_wedding"]), step=25.0)
-            d["assistant_per_wedding"] = st.number_input("Assistant (per wedding)", min_value=0.0, value=float(d["assistant_per_wedding"]), step=25.0)
-            d["travel_per_wedding"] = st.number_input("Travel: gas/tolls/parking (per wedding)", min_value=0.0, value=float(d["travel_per_wedding"]), step=10.0)
-            d["lodging_per_wedding"] = st.number_input("Lodging (per wedding)", min_value=0.0, value=float(d["lodging_per_wedding"]), step=25.0)
-            d["meals_per_wedding"] = st.number_input("Meals (per wedding)", min_value=0.0, value=float(d["meals_per_wedding"]), step=5.0)
-            d["delivery_packaging_per_wedding"] = st.number_input("Delivery/packaging (per wedding)", min_value=0.0, value=float(d["delivery_packaging_per_wedding"]), step=5.0)
-            d["gallery_overages_per_wedding"] = st.number_input("Gallery hosting overages (per wedding)", min_value=0.0, value=float(d["gallery_overages_per_wedding"]), step=5.0)
-            d["album_prints_per_wedding"] = st.number_input("Albums/prints costs (per wedding)", min_value=0.0, value=float(d["album_prints_per_wedding"]), step=25.0)
-            d["other_variable_per_wedding"] = st.number_input("Other variable costs (per wedding)", min_value=0.0, value=float(d["other_variable_per_wedding"]), step=10.0)
+            d["second_shooter_per_wedding"] = st.number_input("Second shooter", min_value=0.0, value=float(d["second_shooter_per_wedding"]), step=25.0)
+            d["assistant_per_wedding"] = st.number_input("Assistant", min_value=0.0, value=float(d["assistant_per_wedding"]), step=25.0)
+            d["travel_per_wedding"] = st.number_input("Travel: Gas/tolls/parking", min_value=0.0, value=float(d["travel_per_wedding"]), step=10.0)
+            d["lodging_per_wedding"] = st.number_input("Lodging", min_value=0.0, value=float(d["lodging_per_wedding"]), step=25.0)
+            d["meals_per_wedding"] = st.number_input("Meals", min_value=0.0, value=float(d["meals_per_wedding"]), step=5.0)
+            d["delivery_packaging_per_wedding"] = st.number_input("Delivery/packaging", min_value=0.0, value=float(d["delivery_packaging_per_wedding"]), step=5.0)
+            d["gallery_overages_per_wedding"] = st.number_input("Gallery hosting overages", min_value=0.0, value=float(d["gallery_overages_per_wedding"]), step=5.0)
+            d["album_prints_per_wedding"] = st.number_input("Albums/prints costs", min_value=0.0, value=float(d["album_prints_per_wedding"]), step=25.0)
+            d["other_variable_per_wedding"] = st.number_input("Other variable costs", min_value=0.0, value=float(d["other_variable_per_wedding"]), step=10.0)
 
         with st.expander("Time per wedding (hours)", expanded=False):
             d["inquiry_booking_hours"] = st.number_input("Inquiry + booking admin", min_value=0.0, value=float(d["inquiry_booking_hours"]), step=0.5)
@@ -304,7 +321,35 @@ def render_wedding_codb_calculator():
             d["blogging_vendor_hours"] = st.number_input("Blogging + vendor outreach", min_value=0.0, value=float(d["blogging_vendor_hours"]), step=0.5)
 
         with st.expander("Income & pricing", expanded=True):
-            d["target_personal_income_annual"] = st.number_input("Target personal income (annual)", min_value=0.0, value=float(d["target_personal_income_annual"]), step=1000.0)
+            d["target_take_home_income_annual"] = st.number_input(
+                "Target take-home income (annual)",
+                min_value=0.0,
+                value=float(d.get("target_take_home_income_annual", 70000)),
+                step=1000.0,
+                help="Your goal after taxes (roughly). The calculator will gross this up using the estimated tax rate."
+            )
+
+            d["effective_tax_rate_pct"] = st.slider(
+                "Estimated effective tax rate (%)",
+                min_value=10,
+                max_value=45,
+                value=int(d.get("effective_tax_rate_pct", 30)),
+                help="Rough blended rate (federal + state + self-employment). Estimate only."
+            )
+
+            d["target_profit_margin_pct"] = st.slider(
+                "Target profit margin (%)",
+                min_value=0,
+                max_value=60,
+                value=int(d["target_profit_margin_pct"])
+            )
+
+            d["current_avg_price_per_wedding"] = st.number_input(
+                "Current average price per wedding",
+                min_value=0.0,
+                value=float(d["current_avg_price_per_wedding"]),
+                step=100.0
+            )
             d["target_profit_margin_pct"] = st.slider("Target profit margin (%)", min_value=0, max_value=60, value=int(d["target_profit_margin_pct"]))
             d["current_avg_price_per_wedding"] = st.number_input(
                 "Current average price per wedding", min_value=0.0, value=float(d["current_avg_price_per_wedding"]), step=100.0
@@ -334,7 +379,7 @@ def render_wedding_codb_calculator():
 
         m1, m2, m3 = st.columns(3)
         m1.metric("True cost per wedding", _money(res.true_cost_per_wedding))
-        m2.metric("Break-even price (no profit)", _money(res.break_even_price_per_wedding_no_profit))
+        m2.metric("Break-even price (incl. taxes)", _money(res.break_even_price_per_wedding_no_profit))
         m3.metric("Recommended price (with profit)", _money(res.recommended_price_per_wedding_with_profit))
 
         st.divider()
@@ -362,12 +407,15 @@ def render_wedding_codb_calculator():
                 "If that feels low, your quickest levers are pricing, outsourcing, reducing editing time, or increasing volume."
             )
         else:
-            st.success("This looks sustainable on paper — now sanity-check your time estimates and seasonal workload.")
+            st.success("This looks sustainable on paper! Now sanity-check your time estimates and seasonal workload.")
+
+        delta = res.recommended_price_per_wedding_with_profit - float(inp.current_avg_price_per_wedding)
+        delta_str = f"{'up' if delta >= 0 else 'down'} {_money(abs(delta))}"
 
         st.info(
-            f"To hit your target profit margin of {_pct(inp.target_profit_margin_pct)}, your recommended price is "
-            f"{_money(res.recommended_price_per_wedding_with_profit)} "
-            f"({'+' if gap >= 0 else ''}{_money(gap)} vs your current avg)."
+            f"To hit your target profit margin of {_pct(inp.target_profit_margin_pct)}, "
+            f"your recommended price is {_money(res.recommended_price_per_wedding_with_profit)} — "
+            f"that’s {delta_str} vs your current avg."
         )
 
         if res.weddings_needed_to_hit_income_goal_at_current_price == float("inf"):
@@ -386,9 +434,9 @@ def render_wedding_codb_calculator():
 
         cost_df = pd.DataFrame(
             [
-                {"Category": "Fixed costs (annual)", "Amount": res.annual_fixed_costs},
-                {"Category": "Variable costs (annual)", "Amount": res.avg_variable_cost_per_wedding * inp.weddings_per_year},
-                {"Category": "Total costs (annual)", "Amount": res.annual_total_costs},
+                {"Category": "Annual: Fixed costs", "Amount": res.annual_fixed_costs},
+                {"Category": "Annual: Variable costs", "Amount": res.avg_variable_cost_per_wedding * inp.weddings_per_year},
+                {"Category": "Annual: Total costs", "Amount": res.annual_total_costs},
             ]
         )
         st.dataframe(cost_df, use_container_width=True, hide_index=True)
