@@ -393,9 +393,6 @@ def render_wedding_codb_calculator():
         st.divider()
         st.subheader("Insights")
 
-        current_price = float(inp.current_avg_price_per_wedding)
-        gap = res.recommended_price_per_wedding_with_profit - current_price
-
         if res.net_profit_per_wedding_at_current_price <= 0:
             st.error(
                 "At your current average price, you're not covering your total costs (after fixed-cost allocation). "
@@ -409,14 +406,24 @@ def render_wedding_codb_calculator():
         else:
             st.success("This looks sustainable on paper! Now sanity-check your time estimates and seasonal workload.")
 
-        delta = res.recommended_price_per_wedding_with_profit - float(inp.current_avg_price_per_wedding)
-        delta_str = f"{'up' if delta >= 0 else 'down'} {_money(abs(delta))}"
+        current_price = float(inp.current_avg_price_per_wedding)
+        recommended = float(res.recommended_price_per_wedding_with_profit)
+        delta = recommended - current_price
+        delta_str = f"{'+' if delta >= 0 else '-'}{_money(abs(delta))}"
 
-        st.info(
-            f"To hit your target profit margin of {_pct(inp.target_profit_margin_pct)}, "
-            f"your recommended price is {_money(res.recommended_price_per_wedding_with_profit)} — "
-            f"that’s {delta_str} vs your current avg."
+        msg = (
+            f"**Recommended:** {_money(recommended)}  \n"
+            f"**Difference:** {delta_str} vs your current avg  \n"
+            f"**Margin:** {_pct(inp.target_profit_margin_pct)}"
         )
+
+        if delta > 0:
+            st.warning(msg)
+        elif delta < 0:
+            st.success(msg)
+        else:
+            st.info(msg)
+
 
         if res.weddings_needed_to_hit_income_goal_at_current_price == float("inf"):
             st.warning(
