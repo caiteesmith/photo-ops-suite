@@ -5,6 +5,8 @@ It’s designed to help photographers create realistic timelines, plan around su
 
 Built with Python and Streamlit, Photo Ops Suite focuses on clarity, speed, and photographer-aware planning rather than rigid schedules or generic event tools.
 
+![Screenshot of Timeline Builder](assets/photo-ops-suite.webp)
+
 ## ✨ Why Photo Ops Suite Exists
 Wedding photographers constantly juggle:
 - Coverage limits  
