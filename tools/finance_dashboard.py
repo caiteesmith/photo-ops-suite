@@ -75,7 +75,7 @@ DEFAULT_VARIABLE = [
     {"Expense": "Subscriptions", "Monthly Amount": 0.0, "Notes": ""},
 ]
 DEFAULT_SAVING = [
-    {"Bucket": "401k/Roth IRA", "Monthly Amount": 0.0, "Notes": ""},
+    {"Bucket": "Retirement", "Monthly Amount": 0.0, "Notes": ""},
     {"Bucket": "Brokerage", "Monthly Amount": 0.0, "Notes": ""},
     {"Bucket": "Emergency fund", "Monthly Amount": 0.0, "Notes": ""},
 ]
@@ -86,7 +86,7 @@ DEFAULT_ASSETS = [
     {"Asset": "Checking", "Value": 0.0, "Notes": ""},
     {"Asset": "Savings", "Value": 0.0, "Notes": ""},
     {"Asset": "Brokerage", "Value": 0.0, "Notes": ""},
-    {"Asset": "401k/Roth IRA", "Value": 0.0, "Notes": ""},
+    {"Asset": "Retirement", "Value": 0.0, "Notes": ""},
 ]
 DEFAULT_LIABILITIES = [
     {"Liability": "Mortgage", "Value": 0.0, "Notes": ""},
@@ -210,7 +210,7 @@ def render_personal_finance_dashboard():
             st.session_state["pf_variable_df"] = variable_df
 
         with tab_save:
-            st.write("Monthly contributions you want to make (Roth, brokerage, emergency fund, etc.).")
+            st.write("Monthly contributions you want to make (Retirement, brokerage, emergency fund, etc.).")
             saving_df = st.data_editor(
                 saving_df,
                 num_rows="dynamic",
@@ -245,7 +245,6 @@ def render_personal_finance_dashboard():
         if income_is == "Gross (before tax)" and tax_rate > 0:
             st.metric("Estimated Taxes (monthly)", _money(est_tax))
         st.metric("Expenses (monthly)", _money(expenses_total))
-        st.caption(f"Fixed: {_money(fixed_total)} • Variable: {_money(variable_total)}")
         st.metric("Saving / Investing (monthly)", _money(saving_total))
         st.metric("Left Over (monthly)", _money(remaining))
         safe_weekly = remaining / 4.33
