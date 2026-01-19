@@ -40,10 +40,6 @@ PHOTO_OPS_TOOLS = [
     "For Fun: What's Your Wedding Photographer Score?",
 ]
 
-PERSONAL_TOOLS = [
-    "Dashboard: Personal Finance",
-]
-
 
 def main():
     with st.sidebar:
@@ -67,15 +63,13 @@ def main():
 
         section = st.radio(
             "Section",
-            ["Wedding Tools", "Personal Tools"],
+            ["Wedding Tools"],
             index=0,
             key="sidebar_section",
         )
 
         if section == "Wedding Tools":
             tool = st.radio("Choose a tool", PHOTO_OPS_TOOLS, index=0, key="sidebar_wedding_tool")
-        else:
-            tool = st.radio("Choose a tool", PERSONAL_TOOLS, index=0, key="sidebar_personal_tool")
 
     # Routing
     if tool == "Builder: Timeline":
@@ -88,8 +82,6 @@ def main():
         render_wedding_codb_calculator()
     elif tool == "For Fun: What's Your Wedding Photographer Score?":
         render_wedding_photographer_score()
-    elif tool == "Dashboard: Personal Finance":
-        render_personal_finance_dashboard()
 
 
 if __name__ == "__main__":

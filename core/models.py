@@ -51,8 +51,8 @@ class ReceptionEvents:
     dancefloor_minutes: int = 90
 
     cake_cutting_minutes: int = 10
-    bouquet_toss_minutes: int = 8
-    garter_toss_minutes: int = 5
+    bouquet_toss_minutes: int = 0
+    garter_toss_minutes: int = 0
 
 @dataclass(frozen=True)
 class EventInputs:
@@ -70,6 +70,7 @@ class EventInputs:
 
     getting_ready_location: str
     ceremony_location: str
+    portraits_location: str
     reception_location: str
 
     travel_gr_to_ceremony_minutes: int

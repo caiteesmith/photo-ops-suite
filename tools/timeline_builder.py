@@ -72,6 +72,30 @@ def _add_travel(blocks: List[TimelineBlock], t: datetime, travel_minutes: int, f
     )
 
 
+def _add_gap_to_cocktail_hour(
+    blocks: List[TimelineBlock],
+    t: datetime,
+    gap_minutes: int,
+    location: str,
+) -> datetime:
+    """
+    Optional long gap between ceremony flow and cocktail hour start.
+    Useful for church ceremonies + travel/logistics before cocktail hour begins.
+    """
+    if gap_minutes <= 0:
+        return t
+    return _add_block(
+        blocks,
+        name="Gap before cocktail hour",
+        start=t,
+        minutes=int(gap_minutes),
+        location=location,
+        notes="Buffer for travel/logistics between ceremony and cocktail hour.",
+        audience="Vendor",
+        kind="buffer",
+    )
+
+
 def _family_minutes(inputs: EventInputs) -> int:
     if inputs.family_groupings and inputs.family_groupings > 0:
         return int(inputs.family_groupings) * int(inputs.minutes_per_family_grouping)
@@ -133,7 +157,7 @@ def coverage_allocation_by_kind(blocks: List[TimelineBlock], coverage_start: dat
 
     rows = []
     for b in blocks:
-        if b.kind == "coverage":
+        if b.kind in {"coverage", "window"}:
             continue
 
         mins = _overlap_minutes(b.start, b.end, coverage_start, coverage_end)
@@ -161,6 +185,7 @@ def coverage_allocation_by_kind(blocks: List[TimelineBlock], coverage_start: dat
     grouped["Time Used"] = grouped["Minutes"].apply(lambda m: f"{m} min ({round(m / 60, 2)} hr)")
     return grouped[["Kind", "Time Used"]]
 
+
 def coverage_allocation_top_blocks(blocks: List[TimelineBlock], coverage_start: datetime, coverage_end: datetime, top_n: int = 8) -> pd.DataFrame:
     """
     Picks top_n blocks by minutes-in-coverage, then displays chronologically.
@@ -169,7 +194,7 @@ def coverage_allocation_top_blocks(blocks: List[TimelineBlock], coverage_start: 
 
     rows = []
     for b in blocks:
-        if b.kind == "coverage":
+        if b.kind in {"coverage", "window"}:
             continue
 
         mins = _overlap_minutes(b.start, b.end, coverage_start, coverage_end)
@@ -205,6 +230,7 @@ def coverage_allocation_top_blocks(blocks: List[TimelineBlock], coverage_start: 
     df = df.sort_values("StartDT").drop(columns=["StartDT", "MinutesSort"]).reset_index(drop=True)
     return df
 
+
 def coverage_totals(blocks: List[TimelineBlock], coverage_start: datetime, coverage_end: datetime) -> Dict[str, int]:
     """
     Returns:
@@ -217,7 +243,7 @@ def coverage_totals(blocks: List[TimelineBlock], coverage_start: datetime, cover
     latest_end = coverage_start
 
     for b in blocks:
-        if b.kind == "coverage":
+        if b.kind in {"coverage", "window"}:
             continue
         scheduled_total += max(0, b.duration_minutes)
         latest_end = max(latest_end, b.end)
@@ -230,12 +256,14 @@ def coverage_totals(blocks: List[TimelineBlock], coverage_start: datetime, cover
         "overage_minutes": int(overage),
     }
 
+
 def _dancefloor_intervals(blocks: List[TimelineBlock]) -> List[tuple[datetime, datetime]]:
     intervals = []
     for b in blocks:
         if b.name.startswith("Dancefloor coverage"):
             intervals.append((b.start, b.end))
     return intervals
+
 
 def _embedded_in_dancefloor_minutes(
     b: TimelineBlock,
@@ -248,10 +276,28 @@ def _embedded_in_dancefloor_minutes(
         total += _overlap_minutes(b.start, b.end, max(ds, coverage_start), min(de, coverage_end))
     return total
 
+
 # ---------- Main timeline builder ----------
 def build_timeline(inputs: EventInputs) -> Tuple[List[TimelineBlock], List[str]]:
+    """
+    Notes:
+    - Cocktail hour is ALWAYS included exactly once.
+    - If inputs.reception_start is provided, cocktail hour is anchored to it (starts reception_start - cocktail_minutes).
+    - If reception_start is not provided:
+        - If inputs.cocktail_hour_follows_ceremony is True (default), cocktail starts immediately after ceremony/reset.
+        - Else, a long gap block is inserted before cocktail (inputs.ceremony_to_cocktail_gap_minutes).
+    - When no first look, portraits are scheduled post-ceremony and may overlap what guests experience as "cocktail hour".
+      In that case, we mark cocktail hour as kind="window" so it doesn't double-count coverage minutes.
+    """
     blocks: List[TimelineBlock] = []
     warnings: List[str] = []
+
+    # Centralized portrait location (fallbacks)
+    portrait_location = (
+        getattr(inputs, "portraits_location", None)
+        or inputs.ceremony_location
+        or inputs.getting_ready_location
+    )
 
     # ------------------------
     # PRE-CEREMONY
@@ -320,7 +366,7 @@ def build_timeline(inputs: EventInputs) -> Tuple[List[TimelineBlock], List[str]]
         t,
         inputs.individual_portraits_minutes,
         inputs.getting_ready_location,
-        notes="Each partner individually (or solo portraits) while everyone’s fresh.",
+        notes="Each partner individually (or solo portraits) while everyone's fresh.",
         audience="Vendor",
         kind="photo",
     )
@@ -336,12 +382,12 @@ def build_timeline(inputs: EventInputs) -> Tuple[List[TimelineBlock], List[str]]
             "First look",
             t,
             inputs.first_look_minutes,
-            inputs.ceremony_location,
+            portrait_location,
             notes="Private moment & first reactions.",
             audience="Vendor",
             kind="photo",
         )
-        t = _add_buffer(blocks, t, inputs.buffer_minutes, inputs.ceremony_location)
+        t = _add_buffer(blocks, t, inputs.buffer_minutes, portrait_location)
 
         # If there IS a first look, do ALL portraits pre-ceremony
         dyn_note = _family_dynamics_notes(inputs)
@@ -353,12 +399,12 @@ def build_timeline(inputs: EventInputs) -> Tuple[List[TimelineBlock], List[str]]
             "Couple portraits",
             t,
             inputs.couple_portraits_minutes,
-            inputs.ceremony_location,
+            portrait_location,
             notes="All couple portraits completed pre-ceremony when first look is scheduled.",
             audience="Vendor",
             kind="photo",
         )
-        t = _add_buffer(blocks, t, inputs.buffer_minutes, inputs.ceremony_location)
+        t = _add_buffer(blocks, t, inputs.buffer_minutes, portrait_location)
 
         # Wedding party portraits
         t = _add_block(
@@ -366,12 +412,12 @@ def build_timeline(inputs: EventInputs) -> Tuple[List[TimelineBlock], List[str]]
             "Wedding party portraits",
             t,
             inputs.wedding_party_portraits_minutes,
-            inputs.ceremony_location,
+            portrait_location,
             notes="All wedding party portraits completed pre-ceremony when first look is scheduled.",
             audience="Vendor",
             kind="photo",
         )
-        t = _add_buffer(blocks, t, inputs.buffer_minutes, inputs.ceremony_location)
+        t = _add_buffer(blocks, t, inputs.buffer_minutes, portrait_location)
 
         # Family portraits
         extra_family_buffer = 0
@@ -387,12 +433,12 @@ def build_timeline(inputs: EventInputs) -> Tuple[List[TimelineBlock], List[str]]
             "Family portraits",
             t,
             fam_minutes,
-            inputs.ceremony_location,
+            portrait_location,
             notes=("All family formals completed pre-ceremony when first look is scheduled. " + dyn_note).strip(),
             audience="Vendor",
             kind="photo",
         )
-        t = _add_buffer(blocks, t, inputs.buffer_minutes + extra_family_buffer, inputs.ceremony_location)
+        t = _add_buffer(blocks, t, inputs.buffer_minutes + extra_family_buffer, portrait_location)
 
     # Pre-ceremony tuckaway
     if t < inputs.ceremony_start:
@@ -465,7 +511,7 @@ def build_timeline(inputs: EventInputs) -> Tuple[List[TimelineBlock], List[str]]
         )
         t = _add_buffer(blocks, t, inputs.buffer_minutes, inputs.ceremony_location)
 
-    # Only add reset time if user wants buffer time
+    # Reset time
     t = _add_buffer(
         blocks,
         t,
@@ -486,72 +532,46 @@ def build_timeline(inputs: EventInputs) -> Tuple[List[TimelineBlock], List[str]]
         extra_family_buffer = max(5, inputs.buffer_minutes // 2)
 
     # ------------------------
-    # POST-CEREMONY
+    # POST-CEREMONY (portraits if no first look)
     # ------------------------
-    if inputs.first_look:
-        # No portraits post-ceremony (except optional sunset photos later)
-        t = _add_block(
-            blocks,
-            "Cocktail hour coverage",
-            t,
-            inputs.cocktail_hour_minutes,
-            inputs.ceremony_location,
-            notes="Candids & reception details",
-            audience="Vendor",
-            kind="photo",
-        )
-        t = _add_buffer(blocks, t, inputs.buffer_minutes, inputs.ceremony_location)
-
-    else:
-        # No first look → portraits happen post-ceremony (often during cocktail hour)
+    if not inputs.first_look:
         t = _add_block(
             blocks,
             "Family portraits",
             t,
             fam_minutes,
-            inputs.ceremony_location,
+            portrait_location,
             notes=("Keep list tight & assign a wrangler. " + dyn_note).strip(),
             audience="Vendor",
             kind="photo",
         )
-        t = _add_buffer(blocks, t, inputs.buffer_minutes + extra_family_buffer, inputs.ceremony_location)
+        t = _add_buffer(blocks, t, inputs.buffer_minutes + extra_family_buffer, portrait_location)
 
         t = _add_block(
             blocks,
             "Wedding party portraits",
             t,
             inputs.wedding_party_portraits_minutes,
-            inputs.ceremony_location,
+            portrait_location,
             notes="Full group + smaller combos.",
             audience="Vendor",
             kind="photo",
         )
-        t = _add_buffer(blocks, t, inputs.buffer_minutes, inputs.ceremony_location)
+        t = _add_buffer(blocks, t, inputs.buffer_minutes, portrait_location)
 
         t = _add_block(
             blocks,
             "Couple portraits",
             t,
             inputs.couple_portraits_minutes,
-            inputs.ceremony_location,
+            portrait_location,
             notes="Aim for flattering light + a little breathing room.",
             audience="Vendor",
             kind="photo",
         )
-        t = _add_buffer(blocks, t, inputs.buffer_minutes, inputs.ceremony_location)
+        t = _add_buffer(blocks, t, inputs.buffer_minutes, portrait_location)
 
-        # Cocktail hour feasibility warning remains relevant here
-        est_post = fam_minutes + inputs.wedding_party_portraits_minutes + inputs.couple_portraits_minutes
-        if inputs.receiving_line:
-            est_post += inputs.receiving_line_minutes
-        if est_post > inputs.cocktail_hour_minutes:
-            warnings.append(
-                f"No first look: estimated post-ceremony portraits ~{est_post} min vs cocktail hour "
-                f"{inputs.cocktail_hour_minutes} min. Expect tight timing unless portrait time is reduced or cocktail hour extended."
-            )
-
-    # Cocktail hour feasibility warning (no first look)
-    if not inputs.first_look:
+        # feasibility warning
         est_post = fam_minutes + inputs.wedding_party_portraits_minutes + inputs.couple_portraits_minutes
         if inputs.receiving_line:
             est_post += inputs.receiving_line_minutes
@@ -567,12 +587,58 @@ def build_timeline(inputs: EventInputs) -> Tuple[List[TimelineBlock], List[str]]
             )
 
     # ------------------------
-    # TRAVEL TO RECEPTION
+    # TRAVEL TO RECEPTION (if any)
     # ------------------------
     t = _add_travel(blocks, t, inputs.travel_ceremony_to_reception_minutes, "Ceremony → Reception")
 
+    # ------------------------
+    # COCKTAIL HOUR (always included exactly once)
+    # ------------------------
+    cocktail_kind = "photo" if inputs.first_look else "window"
+    cocktail_notes = (
+        "Candids & reception details."
+        if inputs.first_look
+        else "Cocktail hour window. If there is no first look, portraits/travel may overlap this time."
+    )
+
+    cocktail_location = inputs.reception_location or inputs.ceremony_location
+
+    # Preferred: anchor cocktail hour off reception_start if provided
+    if inputs.reception_start is not None:
+        cocktail_start = add_minutes(inputs.reception_start, -int(inputs.cocktail_hour_minutes))
+        if cocktail_start < t:
+            warnings.append(
+                f"Cocktail hour start ({safe_fmt_time(cocktail_start)}) is earlier than the current timeline position "
+                f"({safe_fmt_time(t)}). Portraits/travel may be too long."
+            )
+    else:
+        # Otherwise: either starts immediately after ceremony flow, or after a user-defined gap
+        cocktail_start = t
+        follows = getattr(inputs, "cocktail_hour_follows_ceremony", True)
+        gap_mins = int(getattr(inputs, "ceremony_to_cocktail_gap_minutes", 0) or 0)
+
+        if not follows:
+            cocktail_start = _add_gap_to_cocktail_hour(blocks, cocktail_start, gap_mins, cocktail_location)
+
+    # Add the one cocktail hour block
+    t = _add_block(
+        blocks,
+        "Cocktail hour",
+        cocktail_start,
+        int(inputs.cocktail_hour_minutes),
+        cocktail_location,
+        notes=cocktail_notes,
+        audience="Vendor",
+        kind=cocktail_kind,
+    )
+
+    # Ensure the main cursor advances to the end of cocktail hour
+    t = add_minutes(cocktail_start, int(inputs.cocktail_hour_minutes))
+    t = _add_buffer(blocks, t, inputs.buffer_minutes, cocktail_location)
+
+    # ------------------------
     # Reception start anchor (optional)
-    # ✅ Reception start marker (shows in timeline)
+    # ------------------------
     if inputs.reception_start is not None:
         _add_block(
             blocks,
@@ -587,7 +653,7 @@ def build_timeline(inputs: EventInputs) -> Tuple[List[TimelineBlock], List[str]]
 
     if inputs.reception_start and t > inputs.reception_start:
         late = minutes_between(inputs.reception_start, t)
-        warnings.append(f"Arrives {late} min after reception start time you entered (portraits/travel may be too long).")
+        warnings.append(f"Arrives {late} min after reception start time you entered (timeline may be too tight).")
 
     if inputs.reception_start and t < inputs.reception_start:
         slack = minutes_between(t, inputs.reception_start)
@@ -715,10 +781,10 @@ def build_timeline(inputs: EventInputs) -> Tuple[List[TimelineBlock], List[str]]
         golden_start = add_minutes(inputs.sunset_time, -30)
         _add_block(
             blocks,
-            "Golden hour portraits (suggested)",
+            "Golden hour portraits",
             golden_start,
             int(inputs.golden_hour_window_minutes),
-            inputs.reception_location or inputs.ceremony_location,
+            portrait_location or inputs.reception_location or inputs.ceremony_location,
             notes=f"Sunset ~ {safe_fmt_time(inputs.sunset_time)}.",
             audience="Vendor",
             kind="photo",
@@ -773,7 +839,7 @@ def blocks_to_text(blocks: List[TimelineBlock], audience_filter: str | None = No
                 lines.append(f"  - {b.notes}")
             continue
 
-        lines.append(f"{safe_fmt_time(b.start)}–{safe_fmt_time(b.end)} • {b.name} ({b.location})")
+        lines.append(f"{safe_fmt_time(b.start)}-{safe_fmt_time(b.end)} | {b.name} ({b.location})")
         if b.notes:
             lines.append(f"  - {b.notes}")
 

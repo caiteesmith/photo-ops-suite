@@ -30,7 +30,7 @@
     "toasts_minutes": 20,
     "dinner_minutes": 60,
     "cake_cutting_minutes": 10,
-    "bouquet_toss_minutes": 8,
-    "garter_toss_minutes": 5
+    "bouquet_toss_minutes": 0,
+    "garter_toss_minutes": 0
   }
 }

@@ -20,6 +20,7 @@ from tools.timeline_builder import (
 
 DEFAULTS_PATH = Path(__file__).parent / "defaults.json"
 
+
 def load_defaults() -> dict:
     if DEFAULTS_PATH.exists():
         return json.loads(DEFAULTS_PATH.read_text())
@@ -31,6 +32,22 @@ def parse_optional_time(wedding_date: str, raw: str):
     if not raw:
         return None
     return parse_hhmm(wedding_date, raw)
+
+
+def _fmt_minutes_hm(minutes: int) -> str:
+    """
+    Render minutes as 'X hr Y min' / 'X hr' / 'Y min'.
+    """
+    mins = int(minutes or 0)
+    hours = mins // 60
+    rem = mins % 60
+
+    if hours and rem:
+        return f"{hours} hr {rem} min"
+    if hours:
+        return f"{hours} hr" if hours == 1 else f"{hours} hrs"
+    return f"{rem} min"
+
 
 def render_timeline_builder():
     defaults = load_defaults()
@@ -83,6 +100,8 @@ def render_timeline_builder():
     with colA:
         st.markdown("### Coverage Details")
 
+        couple = st.text_input("Couple's Name", "Johnny & June")
+
         wedding_date = st.text_input("Wedding date (YYYY-MM-DD)", value="2026-06-20")
 
         coverage_start_str = st.text_input("Coverage start time", value="12:00 PM")
@@ -114,7 +133,7 @@ def render_timeline_builder():
         st.markdown("### Photographer arrival")
         photographer_arrival_str = st.text_input("Photographer arrival time (optional)", value="")
         arrival_setup_minutes = st.number_input(
-            "Arrival/setup minutes (optional)",
+            "Early arrival/setup minutes (optional)",
             min_value=0,
             max_value=60,
             value=int(defaults.get("arrival_setup_minutes", 0)),
@@ -126,6 +145,7 @@ def render_timeline_builder():
         st.caption("Define your location or use the default values.")
         getting_ready_location = st.text_input("Getting ready location", value="Getting ready location")
         ceremony_location = st.text_input("Ceremony location", value="Ceremony location")
+        portraits_location = st.text_input("Portraits location", value="Portraits location")
         reception_location = st.text_input("Reception location", value="Reception location")
 
         st.markdown("### Travel")
@@ -257,7 +277,12 @@ def render_timeline_builder():
         toasts = st.toggle("Toasts", value=True)
         dinner = st.toggle("Dinner block", value=True)
         dancefloor_coverage = st.toggle("Dancefloor coverage", value=True)
-        dancefloor_mins = st.number_input("Dancefloor coverage minutes", min_value=0, max_value=240, value=int(defaults.get("dancefloor_minutes", 90)))
+        dancefloor_mins = st.number_input(
+            "Dancefloor coverage minutes",
+            min_value=0,
+            max_value=240,
+            value=int(defaults.get("dancefloor_minutes", 90)),
+        )
 
         cake_cutting = st.toggle("Cake cutting", value=True)
         bouquet_toss = st.toggle("Bouquet toss", value=False)
@@ -274,17 +299,57 @@ def render_timeline_builder():
         garter_time = st.text_input("Garter toss time (optional)", value="")
 
         st.markdown("#### Reception event durations")
-        ge_mins = st.number_input("Grand entrance minutes", min_value=2, max_value=30, value=int(event_defaults.get("grand_entrance_minutes", 10)))
-        fd_mins = st.number_input("First dance minutes", min_value=2, max_value=20, value=int(event_defaults.get("first_dance_minutes", 8)))
-        pd_mins = st.number_input("Parent dances minutes", min_value=2, max_value=25, value=int(event_defaults.get("parent_dances_minutes", 10)))
-        toasts_mins = st.number_input("Toasts minutes", min_value=5, max_value=60, value=int(event_defaults.get("toasts_minutes", 20)))
-        dinner_mins = st.number_input("Dinner minutes", min_value=30, max_value=120, value=int(event_defaults.get("dinner_minutes", 60)))
-        cake_mins = st.number_input("Cake cutting minutes", min_value=3, max_value=30, value=int(event_defaults.get("cake_cutting_minutes", 10)))
-        bouquet_mins = st.number_input("Bouquet toss minutes", min_value=3, max_value=20, value=int(event_defaults.get("bouquet_toss_minutes", 8)))
-        garter_mins = st.number_input("Garter toss minutes", min_value=2, max_value=15, value=int(event_defaults.get("garter_toss_minutes", 5)))
+        ge_mins = st.number_input(
+            "Grand entrance minutes",
+            min_value=2,
+            max_value=30,
+            value=int(event_defaults.get("grand_entrance_minutes", 10)),
+        )
+        fd_mins = st.number_input(
+            "First dance minutes",
+            min_value=2,
+            max_value=20,
+            value=int(event_defaults.get("first_dance_minutes", 8)),
+        )
+        pd_mins = st.number_input(
+            "Parent dances minutes",
+            min_value=2,
+            max_value=25,
+            value=int(event_defaults.get("parent_dances_minutes", 10)),
+        )
+        toasts_mins = st.number_input(
+            "Toasts minutes",
+            min_value=5,
+            max_value=60,
+            value=int(event_defaults.get("toasts_minutes", 20)),
+        )
+        dinner_mins = st.number_input(
+            "Dinner minutes",
+            min_value=30,
+            max_value=120,
+            value=int(event_defaults.get("dinner_minutes", 60)),
+        )
+        cake_mins = st.number_input(
+            "Cake cutting minutes",
+            min_value=3,
+            max_value=30,
+            value=int(event_defaults.get("cake_cutting_minutes", 10)),
+        )
+        bouquet_mins = st.number_input(
+            "Bouquet toss minutes",
+            min_value=0,
+            max_value=20,
+            value=int(event_defaults.get("bouquet_toss_minutes", 8)),
+        )
+        garter_mins = st.number_input(
+            "Garter toss minutes",
+            min_value=0,
+            max_value=15,
+            value=int(event_defaults.get("garter_toss_minutes", 5)),
+        )
 
     with colB:
-        st.markdown("### Output")
+        st.markdown("### Timeline")
 
         try:
             coverage_start = parse_hhmm(wedding_date, coverage_start_str)
@@ -309,14 +374,11 @@ def render_timeline_builder():
                 mother_son_dance=bool(mother_son),
                 toasts=bool(toasts),
                 dinner=bool(dinner),
-
                 dancefloor_coverage=bool(dancefloor_coverage),
                 dancefloor_minutes=int(dancefloor_mins),
-
                 cake_cutting=bool(cake_cutting),
                 bouquet_toss=bool(bouquet_toss),
                 garter_toss=bool(garter_toss),
-
                 grand_entrance_time=parse_optional_time(wedding_date, ge_time),
                 first_dance_time=parse_optional_time(wedding_date, fd_time),
                 parent_dances_time=parse_optional_time(wedding_date, pd_time),
@@ -325,7 +387,6 @@ def render_timeline_builder():
                 cake_cutting_time=parse_optional_time(wedding_date, cake_time),
                 bouquet_toss_time=parse_optional_time(wedding_date, bouquet_time),
                 garter_toss_time=parse_optional_time(wedding_date, garter_time),
-
                 grand_entrance_minutes=int(ge_mins),
                 first_dance_minutes=int(fd_mins),
                 parent_dances_minutes=int(pd_mins),
@@ -338,33 +399,25 @@ def render_timeline_builder():
 
             inputs = EventInputs(
                 wedding_date=wedding_date.strip() or None,
-
                 coverage_start=coverage_start,
                 coverage_hours=float(coverage_hours),
                 coverage_end=coverage_end,
-
                 photographer_arrival_time=photographer_arrival_time,
                 arrival_setup_minutes=int(arrival_setup_minutes),
-
                 ceremony_start=ceremony_start,
                 ceremony_minutes=int(ceremony_minutes),
-
                 getting_ready_location=getting_ready_location,
                 ceremony_location=ceremony_location,
+                portraits_location=portraits_location,
                 reception_location=reception_location,
-
                 travel_gr_to_ceremony_minutes=int(travel_gr_to_ceremony),
                 travel_ceremony_to_reception_minutes=int(travel_ceremony_to_reception),
-
                 first_look=bool(first_look),
                 receiving_line=bool(receiving_line),
                 receiving_line_minutes=int(receiving_line_minutes),
-
                 cocktail_hour_minutes=int(cocktail_hour_minutes),
                 protect_cocktail_hour=bool(protect_cocktail_hour),
-
                 family_dynamics=family_dyn,
-
                 buffer_minutes=int(buffer_minutes),
                 flatlay_details_minutes=int(flatlay_details_minutes),
                 getting_dressed_minutes=int(getting_dressed_minutes),
@@ -374,13 +427,10 @@ def render_timeline_builder():
                 wedding_party_portraits_minutes=int(wedding_party_portraits_minutes),
                 family_portraits_minutes=int(family_portraits_minutes),
                 tuckaway_minutes=int(tuckaway_minutes),
-
                 family_groupings=int(family_groupings) if family_groupings else None,
                 minutes_per_family_grouping=int(minutes_per_grouping),
-
                 sunset_time=sunset_time,
                 golden_hour_window_minutes=int(golden_window),
-
                 reception_start=reception_start,
                 reception_events=rec_events,
             )
@@ -388,35 +438,46 @@ def render_timeline_builder():
             blocks, warnings = build_timeline(inputs)
             df = blocks_to_dataframe(blocks)
 
+            # Add couple + date context row in the UI
             st.info(
-                f"Coverage window: {coverage_hours:g} hrs • "
-                f"{coverage_start.strftime('%-I:%M %p')}–{coverage_end.strftime('%-I:%M %p')}"
+                f"🤍 {couple}, {wedding_date} 📸 "
+                f"Coverage: {coverage_hours:g} hrs, "
+                f"from {coverage_start.strftime('%-I:%M %p')} to {coverage_end.strftime('%-I:%M %p')}"
             )
 
             totals = coverage_totals(blocks, coverage_start, coverage_end)
-            alloc_kind = coverage_allocation_by_kind(blocks, coverage_start, coverage_end)
-            top_blocks = coverage_allocation_top_blocks(blocks, coverage_start, coverage_end, top_n=8)
+
+            # Add couple + date as columns in the timeline table / CSV
+            df_display = df.copy()
+            # df_display.insert(0, "Couple", couple)
+            # df_display.insert(1, "Wedding Date", wedding_date)
 
             with st.expander("⏱️ Coverage allocation", expanded=True):
-                m1, m2, m3 = st.columns(3)
-                m1.metric("Minutes in coverage", totals["in_coverage_minutes"])
-                m2.metric("Total scheduled minutes", totals["scheduled_minutes_total"])
-                m3.metric("Minutes past coverage", totals["overage_minutes"])
+                m0, m1, m2, m3 = st.columns(4)
+
+                m0.metric(
+                    "Coverage Hours",
+                    f"{inputs.coverage_hours:g} hrs",
+                )
+
+                m1.metric(
+                    "Coverage Used",
+                    totals["in_coverage_minutes"],
+                    delta=_fmt_minutes_hm(totals["in_coverage_minutes"]),
+                )
+                m2.metric(
+                    "Timeline Scheduled",
+                    totals["scheduled_minutes_total"],
+                    delta=_fmt_minutes_hm(totals["scheduled_minutes_total"]),
+                )
+                m3.metric(
+                    "Over Coverage",
+                    totals["overage_minutes"],
+                    delta=_fmt_minutes_hm(totals["overage_minutes"]),
+                )
 
                 st.markdown("### Timeline")
-                st.dataframe(df, use_container_width=True, hide_index=True)
-
-                st.markdown("**Minutes used by category**")
-                if len(alloc_kind) == 0:
-                    st.caption("No in-coverage minutes to summarize yet.")
-                else:
-                    st.dataframe(alloc_kind, use_container_width=True, hide_index=True)
-
-                st.markdown("**Biggest time sinks**")
-                if len(top_blocks) == 0:
-                    st.caption("No blocks overlap with the coverage window yet.")
-                else:
-                    st.dataframe(top_blocks, use_container_width=True, hide_index=True)
+                st.dataframe(df_display, use_container_width=True, hide_index=True)
 
                 st.caption(
                     "Tip: if you're over coverage, the fastest wins are usually reducing "
@@ -428,11 +489,29 @@ def render_timeline_builder():
                     st.warning(w)
 
             st.markdown("### Exports")
-            csv_bytes = df.to_csv(index=False).encode("utf-8")
-            st.download_button("Download timeline CSV", data=csv_bytes, file_name="timeline.csv", mime="text/csv")
+            couplesName = couple.replace(" ", "_").replace("&", "and")
+
+            # Format date safely (fallback if blank/malformed)
+            weddingDate = wedding_date.strip() or "wedding"
+
+            csv_bytes = df_display.to_csv(index=False).encode("utf-8")
+
+            st.download_button(
+                "Download timeline CSV",
+                data=csv_bytes,
+                file_name=f"{couplesName}_{weddingDate}_timeline.csv",
+                mime="text/csv",
+            )
 
             st.markdown("#### Copy/paste version")
-            st.text_area("Timeline text", value=blocks_to_text(blocks), height=320)
+            timeline_header = (
+                f"{couple}: {wedding_date}\n"
+                f"Coverage: {coverage_start.strftime('%-I:%M %p')}-"
+                f"{coverage_end.strftime('%-I:%M %p')} "
+                f"({coverage_hours:g} hrs)\n"
+            )
+            timeline_text = timeline_header + "\n" + blocks_to_text(blocks)
+            st.text_area("Timeline text", value=timeline_text, height=320)
 
         except Exception as e:
             st.error(f"Couldn't generate timeline yet: {e}")
